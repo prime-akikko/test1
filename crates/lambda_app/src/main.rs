@@ -21,42 +21,55 @@ fn main() {
 /// Headless smoke path for Cloud/CI without native GUI libs.
 #[cfg(not(feature = "gui"))]
 fn run_headless_smoke() {
-    use lambda_app::{session::AppSession, state::ShellState, strings};
+    use lambda_app::{persist::BootstrappedApp, strings};
+    use std::time::{SystemTime, UNIX_EPOCH};
 
     println!("{}", strings::WINDOW_TITLE);
     println!("{}", strings::APP_SUBHEADING);
 
-    let mut state = ShellState::new(cfg!(feature = "mock"));
-    let mut session = AppSession::from_shell_defaults();
+    let nanos = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_nanos();
+    let dir = std::env::temp_dir().join(format!("lambda-modbus-gui-smoke-{nanos}"));
+    let mut boot =
+        BootstrappedApp::load_from(&dir, cfg!(feature = "mock")).expect("Temp-Dir Persistenz");
 
     println!(
-        "Defaults: {}:{} unit {}",
-        state.connection.host, state.connection.port, state.connection.unit_id
+        "Defaults/Config: {}:{} unit {} (dir {})",
+        boot.state.connection.host,
+        boot.state.connection.port,
+        boot.state.connection.unit_id,
+        boot.data_dir.display()
     );
-    println!("Backend: {}", state.backend_label());
-    println!("Gruppen: {}", state.groups.join(", "));
+    println!("Backend: {}", boot.state.backend_label());
+    println!("Gruppen: {}", boot.state.groups.join(", "));
 
-    // Exercise mock connect → poll → disconnect so CI proves wiring without GPUI.
     #[cfg(feature = "mock")]
     {
-        session.connect(&mut state);
-        println!("Nach Verbinden: {}", state.status_label());
-        if let Some(poll) = &state.last_poll {
+        boot.session.connect(&mut boot.state);
+        println!("Nach Verbinden: {}", boot.state.status_label());
+        if let Some(poll) = &boot.state.last_poll {
             println!(
                 "Erster Poll: {} ok / {} Fehler",
                 poll.ok_count, poll.err_count
             );
         }
-        session.disconnect(&mut state);
-        println!("Nach Trennen: {}", state.status_label());
+        let _ = lambda_app::persist::save_connection_settings(&boot.data_dir, &boot.state);
+        boot.session.disconnect(&mut boot.state);
+        println!("Nach Trennen: {}", boot.state.status_label());
+        println!(
+            "Persistenz: config.json vorhanden = {}",
+            boot.data_dir.join("config.json").is_file()
+        );
     }
 
     #[cfg(not(feature = "mock"))]
     {
-        let _ = (&mut session, &mut state);
         println!("Mock-Feature aus — kein automatischer Connect (live TCP).");
         println!("GPUI nicht gelinkt. Für Windows-GUI: --features gui");
     }
 
-    println!("M7-Parameter-R/W-State bereit (GUI-Feature aus).");
+    let _ = std::fs::remove_dir_all(&dir);
+    println!("M8-Persistenz-Smoke bereit (GUI-Feature aus).");
 }

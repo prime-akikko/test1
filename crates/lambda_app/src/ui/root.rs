@@ -8,6 +8,9 @@ use gpui::{
     Timer, TitlebarOptions, Window, WindowBounds, WindowOptions,
 };
 
+use std::path::PathBuf;
+
+use crate::persist::{self, BootstrappedApp};
 use crate::session::AppSession;
 use crate::state::{PendingConfirm, ShellState};
 use crate::strings;
@@ -62,6 +65,7 @@ enum FocusField {
 struct RootView {
     state: ShellState,
     session: AppSession,
+    data_dir: PathBuf,
     focus: FocusHandle,
     field_focus: Option<FocusField>,
 }
@@ -86,15 +90,30 @@ impl RootView {
         })
         .detach();
 
+        let boot = BootstrappedApp::load_default(cfg!(feature = "mock"));
         Self {
-            state: ShellState::new(cfg!(feature = "mock")),
-            session: AppSession::from_shell_defaults(),
+            state: boot.state,
+            session: boot.session,
+            data_dir: boot.data_dir,
             focus,
             field_focus: None,
         }
     }
 
+    fn persist_config(&mut self) {
+        if let Err(err) = persist::save_connection_settings(&self.data_dir, &self.state) {
+            self.state.status_message = format!("{}: {err}", strings::STATUS_ERROR_PREFIX);
+        }
+    }
+
+    fn persist_prefs(&mut self) {
+        if let Err(err) = persist::save_ui_prefs(&self.data_dir, &self.state) {
+            self.state.status_message = format!("{}: {err}", strings::STATUS_ERROR_PREFIX);
+        }
+    }
+
     fn on_connect(&mut self, _: &ClickEvent, _: &mut Window, cx: &mut Context<Self>) {
+        self.persist_config();
         self.session.connect(&mut self.state);
         cx.notify();
     }
@@ -111,6 +130,7 @@ impl RootView {
 
     fn on_select_group(&mut self, group: String, cx: &mut Context<Self>) {
         self.state.select_group(group);
+        self.persist_prefs();
         self.session.refresh_selected_group(&mut self.state);
         cx.notify();
     }
@@ -212,8 +232,12 @@ impl RootView {
             return;
         }
         if key == "backspace" {
+            let is_filter = matches!(field, FocusField::Filter);
             if let Some(t) = self.focused_text_mut() {
                 t.pop();
+                if is_filter {
+                    self.persist_prefs();
+                }
                 cx.notify();
             }
             return;
@@ -240,6 +264,7 @@ impl RootView {
             FocusField::Filter => {
                 if !ch.is_control() {
                     self.state.filter_query.push(ch);
+                    self.persist_prefs();
                     cx.notify();
                 }
             }

@@ -48,7 +48,7 @@ cargo build -p lambda_app --release --features gui
 
 Artefact: `target/release/lambda_app.exe`.
 
-Config directory (later M8): `%APPDATA%\LambdaModbusGui\`.
+Config directory (M8): `%APPDATA%\LambdaModbusGui\` on Windows; Linux `~/.config/LambdaModbusGui`; macOS `~/Library/Application Support/LambdaModbusGui`. Override with `LAMBDA_MODBUS_GUI_DATA`. Files: `config.json`, `prefs.json`, `active_setpoints.json` (atomic writes).
 
 ## Cloud / Linux notes
 

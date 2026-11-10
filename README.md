@@ -36,6 +36,10 @@ Locked defaults: IP `10.0.0.6`, Port `502`, Unit ID `1`, poll **5s**, cyclic wri
 
 `lambda_app` German desktop shell: connection bar, group navigation (incl. Heizkreis 1/2), parameter list with search, write flow with **„Wirklich schreiben?“**, Active-Setpoints panel (60 s cyclic via core). Default `mock` backend; enable windowing with `--features gui`. Live TCP: `--no-default-features --features gui`. See [`crates/lambda_app/README.md`](crates/lambda_app/README.md).
 
+## Local persistence (M8)
+
+Files under `%APPDATA%\LambdaModbusGui\` (Windows) or `~/.config/LambdaModbusGui` (Linux) / Application Support (macOS): `config.json`, `prefs.json`, `active_setpoints.json`. Atomic temp+rename writes. Override dir with env `LAMBDA_MODBUS_GUI_DATA` (Temp-Dir tests). Corrupt JSON → defaults + warning, no panic.
+
 ## Tests (mock-first)
 
 Cloud/CI uses `lambda_mock` (in-memory or loopback TCP). Do **not** point automated tests at live `10.0.0.6`. Hardware acceptance is local/self-hosted only.

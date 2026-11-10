@@ -26,7 +26,6 @@ cargo check -p lambda_app --features gui   # optional native GUI link
 | Doc | Content |
 | --- | --- |
 | [`docs/testing.md`](docs/testing.md) | Test pyramid + hardware AC-01…AC-12 |
-| [`docs/windows-build.md`](docs/windows-build.md) | Windows MSVC / D3D11 release notes |
 | [`AGENTS.md`](AGENTS.md) | Agent / engineering rules |
 
 Specs (requirements, architecture, implementation plan) live in the Project Context,

@@ -63,4 +63,4 @@ cd path\to\test1
 cargo run -p lambda_app --no-default-features --features gui
 ```
 
-See also [`windows-build.md`](windows-build.md).
+Windows MSVC / D3D11 packaging notes are covered separately (M9 / `docs/windows-build.md`).

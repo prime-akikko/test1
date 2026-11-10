@@ -1,12 +1,12 @@
 //! Active-Setpoint store for 60 s cyclic Modbus rewrites (architecture §4.3 / §10.2).
 //!
-//! In-memory for M5. File persistence (`active_setpoints.json`) is owned by M8 —
-//! this module exposes the serializable model and a stub path hook so restore can
-//! plug in later without reshaping the API.
+//! Persists to `active_setpoints.json` under the app data dir when a path is set.
 
 use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
+
+use crate::persist_io::{atomic_write_json, load_json_file, LoadOutcome};
 
 /// Schema version for `active_setpoints.json` (architecture §4.3).
 pub const ACTIVE_SETPOINTS_SCHEMA_VERSION: u32 = 1;
@@ -145,12 +145,12 @@ impl ActiveSetpointStore {
         self.entries = file.entries;
     }
 
-    /// M5 stub: serialize to JSON string (no filesystem write).
+    /// Serialize to JSON string (tests / diagnostics).
     pub fn serialize_json(&self) -> Result<String, String> {
         serde_json::to_string_pretty(&self.to_file()).map_err(|e| e.to_string())
     }
 
-    /// M5 stub: deserialize JSON into memory (no filesystem read).
+    /// Deserialize JSON into memory (no filesystem read).
     pub fn load_from_json(&mut self, json: &str) -> Result<(), String> {
         let file: ActiveSetpointsFile = serde_json::from_str(json).map_err(|e| e.to_string())?;
         if file.schema_version == 0 {
@@ -160,17 +160,50 @@ impl ActiveSetpointStore {
         Ok(())
     }
 
-    /// Persistence no-op until M8. Returns `Ok` without touching the disk.
-    pub fn save_stub(&self) -> Result<(), String> {
-        let _ = self.persist_path.as_ref();
-        let _ = self.serialize_json()?;
-        Ok(())
+    /// Atomically persist to [`Self::persist_path`]. No-op (Ok) if path unset.
+    pub fn save(&self) -> Result<(), String> {
+        let Some(path) = self.persist_path.as_ref() else {
+            return Ok(());
+        };
+        let file = self.to_file();
+        atomic_write_json(path, &file)
     }
 
-    /// Persistence no-op until M8. Leaves the in-memory store unchanged.
+    /// Load from [`Self::persist_path`]. Missing → empty. Corrupt → clear + Err message.
+    pub fn load(&mut self) -> Result<Option<String>, String> {
+        let Some(path) = self.persist_path.clone() else {
+            return Ok(None);
+        };
+        match load_json_file::<ActiveSetpointsFile>(&path) {
+            LoadOutcome::Missing => {
+                self.entries.clear();
+                Ok(None)
+            }
+            LoadOutcome::Loaded(file) => {
+                if file.schema_version == 0 {
+                    self.entries.clear();
+                    return Ok(Some(
+                        "active_setpoints.json ungültig (schema_version 0) — leere Liste".into(),
+                    ));
+                }
+                self.replace_from_file(file);
+                Ok(None)
+            }
+            LoadOutcome::Fallback { message } => {
+                self.entries.clear();
+                Ok(Some(message))
+            }
+        }
+    }
+
+    /// Backward-compatible alias used by the cyclic scheduler.
+    pub fn save_stub(&self) -> Result<(), String> {
+        self.save()
+    }
+
+    /// Backward-compatible alias — prefer [`Self::load`].
     pub fn load_stub(&mut self) -> Result<(), String> {
-        let _ = self.persist_path.as_ref();
-        Ok(())
+        self.load().map(|_| ())
     }
 }
 

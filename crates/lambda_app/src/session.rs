@@ -3,9 +3,9 @@
 use std::time::Duration;
 
 use lambda_core::{
-    defaults, ActiveSetpoint, ConnectionStatus, CyclicWriteConfig, CyclicWriteScheduler, Event,
-    PollConfig, PollScheduler, QueuedTransport, DEFAULT_CYCLIC_WRITE_INTERVAL,
-    DEFAULT_POLL_INTERVAL,
+    defaults, ActiveSetpoint, ActiveSetpointStore, ConnectionStatus, CyclicWriteConfig,
+    CyclicWriteScheduler, Event, PollConfig, PollScheduler, QueuedTransport,
+    DEFAULT_CYCLIC_WRITE_INTERVAL, DEFAULT_POLL_INTERVAL,
 };
 
 use crate::state::ShellState;
@@ -102,6 +102,34 @@ impl AppSession {
         }
     }
 
+    /// Install a previously loaded Active store (M8 restore).
+    pub fn install_active_store(&mut self, store: ActiveSetpointStore) {
+        match &mut self.inner {
+            #[cfg(feature = "mock")]
+            SessionInner::Mock { cyclic, .. } => cyclic.replace_store(store),
+            #[cfg(not(feature = "mock"))]
+            SessionInner::Live { cyclic, .. } => cyclic.replace_store(store),
+        }
+    }
+
+    /// Snapshot the Active store (e.g. before recreating the session for a new unit id).
+    pub fn take_active_store(&mut self) -> ActiveSetpointStore {
+        match &mut self.inner {
+            #[cfg(feature = "mock")]
+            SessionInner::Mock { cyclic, .. } => {
+                let snapshot = cyclic.store().clone();
+                cyclic.replace_store(ActiveSetpointStore::new());
+                snapshot
+            }
+            #[cfg(not(feature = "mock"))]
+            SessionInner::Live { cyclic, .. } => {
+                let snapshot = cyclic.store().clone();
+                cyclic.replace_store(ActiveSetpointStore::new());
+                snapshot
+            }
+        }
+    }
+
     /// Connect using shell fields; drains resulting events into `state`.
     pub fn connect(&mut self, state: &mut ShellState) {
         let host = state.connection.host.trim().to_string();
@@ -121,7 +149,9 @@ impl AppSession {
         };
 
         if unit_id != self.unit_id() {
+            let active = self.take_active_store();
             *self = Self::new(unit_id);
+            self.install_active_store(active);
         }
 
         let result = match &mut self.inner {

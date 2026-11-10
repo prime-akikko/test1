@@ -116,6 +116,11 @@ impl<T: ModbusTransport, C: Clock> CyclicWriteScheduler<T, C> {
         &mut self.store
     }
 
+    /// Replace the in-memory Active store (e.g. after loading `active_setpoints.json`).
+    pub fn replace_store(&mut self, store: ActiveSetpointStore) {
+        self.store = store;
+    }
+
     pub fn transport(&self) -> &T {
         &self.transport
     }

@@ -81,6 +81,9 @@ pub const MSG_WRITE_FAIL: &str = "Schreiben fehlgeschlagen";
 pub const MSG_CYCLIC_WRITE_FAIL: &str = "Zyklisches Schreiben fehlgeschlagen";
 pub const MSG_WRITE_CANCELLED: &str = "Schreiben abgebrochen.";
 pub const MSG_MOCK_NOTE: &str = "Cloud/Dev: Mock-Backend aktiv (keine echte Wärmepumpe).";
+pub const MSG_ACTIVE_RESTORED: &str = "Aktive Sollwerte wiederhergestellt";
+pub const MSG_CONFIG_SAVED: &str = "Verbindungseinstellungen gespeichert.";
+pub const MSG_PREFS_SAVED: &str = "Einstellungen gespeichert.";
 
 /// Navigation groups for v1 (incl. Heizkreis 1 / 2). Order matches catalog UX.
 pub const NAV_GROUPS: &[&str] = &[

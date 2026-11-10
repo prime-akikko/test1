@@ -14,7 +14,7 @@
 //! ([`cyclic::DEFAULT_CYCLIC_WRITE_INTERVAL`]). Confirmed user writes with
 //! `persistence_class: cyclic` enter [`ActiveSetpointStore`]; [`CyclicWriteScheduler`]
 //! rewrites them on the interval **without** a new confirmation. Tests use
-//! [`FakeClock`] + short intervals. File persistence is stubbed until M8.
+//! [`FakeClock`] + short intervals. Local file persistence: [`stores::LoadedStores`] (M8).
 //!
 //! GPUI arrives in M6+.
 
@@ -22,8 +22,13 @@
 
 mod active;
 mod clock;
+mod config;
 mod cyclic;
+mod paths;
+mod persist_io;
 mod poll;
+mod prefs;
+mod stores;
 mod value;
 
 pub use active::{
@@ -31,8 +36,13 @@ pub use active::{
     ActiveSetpointsFile, GroupValue, ACTIVE_SETPOINTS_FILE_NAME, ACTIVE_SETPOINTS_SCHEMA_VERSION,
 };
 pub use clock::{Clock, FakeClock, SystemClock};
+pub use config::{load_config, save_config, ConfigFile, CONFIG_FILE_NAME, CONFIG_SCHEMA_VERSION};
 pub use cyclic::{CyclicWriteConfig, CyclicWriteScheduler, DEFAULT_CYCLIC_WRITE_INTERVAL};
+pub use paths::{app_data_dir, ensure_app_data_dir, DATA_DIR_ENV};
+pub use persist_io::{atomic_write_json, load_json_file, LoadOutcome};
 pub use poll::{PollConfig, PollScheduler, DEFAULT_POLL_INTERVAL};
+pub use prefs::{load_prefs, save_prefs, PrefsFile, PREFS_FILE_NAME, PREFS_SCHEMA_VERSION};
+pub use stores::LoadedStores;
 pub use value::{ParameterValue, ValueQuality};
 
 pub use lambda_catalog;

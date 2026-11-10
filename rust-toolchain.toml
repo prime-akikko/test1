@@ -1,0 +1,4 @@
+# Pin a toolchain new enough for crates.io `gpui` 0.2.2 (edition 2024).
+[toolchain]
+channel = "1.99.1"
+components = ["rustfmt", "clippy"]

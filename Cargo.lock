@@ -2900,6 +2900,7 @@ dependencies = [
 name = "lambda_mock"
 version = "0.1.0"
 dependencies = [
+ "lambda_catalog",
  "lambda_modbus",
 ]
 

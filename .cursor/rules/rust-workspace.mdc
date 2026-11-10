@@ -1,0 +1,14 @@
+---
+description: Rust workspace conventions for Lambda Modbus crates
+globs: **/Cargo.toml,**/Cargo.lock,**/*.rs
+alwaysApply: false
+---
+
+# Rust workspace rules
+
+- Keep crate boundaries: `lambda_app` → `lambda_core` → `lambda_modbus` + `lambda_catalog`; mock only via test/feature.
+- No cycles between crates. Modbus I/O and timers must not block the GPUI UI thread.
+- Serialize all Modbus requests through one client queue.
+- Pin GPUI; commit `Cargo.lock`. Prefer Edition 2021 (or repo standard).
+- After meaningful Rust edits: `cargo fmt` and `cargo check -p <crate>` (or `scripts/check.sh` when workspace exists).
+- Encode/decode and validation live with catalog/core — not ad-hoc in views.

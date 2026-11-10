@@ -1,0 +1,14 @@
+---
+description: Core Lambda Modbus GPUI project invariants (always apply)
+alwaysApply: true
+---
+
+# Lambda Modbus — core invariants
+
+- Stack: Rust + GPUI desktop app for Lambda **EU13L** Modbus TCP.
+- Official MODBUS-PROTOKOLL 1.0 map only; PDU addresses; FC 0x03 read / 0x10 write.
+- Defaults: `10.0.0.6:502`, Unit ID `1`. Poll **5s**. Cyclic active setpoints **60s**.
+- First write needs German confirm dialog; cyclic rewrite does not.
+- Exactly two heating circuits (HK1/HK2). UI strings German. Windows primary.
+- Mock-first tests; never require live WP from Cloud/CI.
+- Follow `AGENTS.md` and Project docs; do not expand v1 scope.

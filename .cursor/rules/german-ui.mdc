@@ -1,0 +1,14 @@
+---
+description: German UI copy and write-safety UX for the GPUI app
+globs: **/lambda_app/**/*.rs,**/*ui*/**/*.rs,**/*view*/**/*.rs
+alwaysApply: false
+---
+
+# German UI & write safety
+
+- All user-visible strings in **German** (labels, buttons, errors, status, dialogs).
+- Confirm first write with „Wirklich schreiben?“; abort = no Modbus write.
+- Read-only parameters must not be editable.
+- Show connection status, last successful poll time, and Active Setpoints panel.
+- Group navigation must include **Heizkreis 1** and **Heizkreis 2**.
+- Mark stale/error values clearly when offline or after partial poll failure.

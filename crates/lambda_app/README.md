@@ -21,6 +21,18 @@ cargo run -p lambda_app --features gui
 
 Default features enable `mock` only (in-memory backend for Cloud/CI).
 
+## M6 shell (German UI)
+
+Layout:
+
+1. **Verbindung** — Host / Port / Unit-ID (Defaults `10.0.0.6` / `502` / `1`), buttons **Verbinden** / **Trennen** / **Jetzt aktualisieren**
+2. **Gruppen** — Allgemein, E-Manager, Wärmepumpe, Warmwasser, Puffer, Solar, **Heizkreis 1**, **Heizkreis 2**
+3. **Parameter** — placeholder until M7 (R/W + „Wirklich schreiben?“)
+4. **Aktive Sollwerte** — panel present (empty until confirmed writes in M7)
+5. **Status** — Verbindungsstatus, letzter Poll, zyklischer Hinweis, Mock/TCP-Backend
+
+Core wiring: `AppSession` drives `PollScheduler` over mock (default) or TCP; UI state maps `ConnectionChanged` / `Poll*` events. Cyclic Active-Setpoint **writes** remain M7; the panel/status slots are already in the shell.
+
 ## Windows build prerequisites (v1 target)
 
 1. [rustup](https://rustup.rs/) target `x86_64-pc-windows-msvc`
@@ -33,10 +45,18 @@ Default features enable `mock` only (in-memory backend for Cloud/CI).
 cargo build -p lambda_app --release --features gui
 ```
 
-Artefact: `target/release/lambda_app.exe` (plus assets once M6+ adds them).
+Artefact: `target/release/lambda_app.exe`.
 
 Config directory (later M8): `%APPDATA%\LambdaModbusGui\`.
 
-## Cloud / Linux note
+## Cloud / Linux notes
 
-This crate compiles without `gui` on developer Linux and Cloud Agents. Full windowing is a local Windows acceptance path (M6+). Do not point automated tests at live `10.0.0.6`.
+| Path | Expectation |
+| --- | --- |
+| `cargo check --workspace` / `cargo test -p lambda_app` | Green without `gui` (headless smoke + state/session tests) |
+| `cargo check -p lambda_app --features gui` | Compiles GPUI on Linux when system GUI deps + vendored `xattr` patch are present; **does not** require a display for typecheck |
+| Full window smoke | Local **Windows** acceptance; Wayland/X11 + Vulkan may work on Linux but are not v1 AC |
+
+Workspace `[patch.crates-io] xattr` (see `vendor/xattr`) fixes a `libc::ENOATTR` breakage that otherwise fails Unix `gui` builds with recent `libc`. Windows never compiles that unix dependency.
+
+Do not point automated tests at live `10.0.0.6`.

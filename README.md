@@ -32,6 +32,10 @@ Locked defaults: IP `10.0.0.6`, Port `502`, Unit ID `1`, poll **5s**, cyclic wri
 
 `lambda_core::CyclicWriteScheduler` + `ActiveSetpointStore` rewrite confirmed **cyclic** setpoints every **60 s** (`defaults::CYCLIC_WRITE_INTERVAL_SECS` / `CyclicWriteConfig::default`). First write requires `confirmed: true`; cyclic repeats do not. Retained writes stay out of Active unless explicitly activated. `ClearActiveSetpoint` / `ClearAllActiveSetpoints` stop rewrites. Persistence path/model is ready; atomic file I/O is M8. Tests use `FakeClock` + `lambda_mock` (no wall-clock 60 s waits).
 
+## GPUI shell (M6)
+
+`lambda_app` German desktop shell: connection bar, group navigation (incl. Heizkreis 1/2), parameter placeholder, Active-Setpoints panel, status bar. Default `mock` backend; enable windowing with `--features gui`. Parameter R/W + confirm dialog are M7. See [`crates/lambda_app/README.md`](crates/lambda_app/README.md) for Windows build notes and Linux/`gui` caveats (`vendor/xattr` patch).
+
 ## Tests (mock-first)
 
 Cloud/CI uses `lambda_mock` (in-memory or loopback TCP). Do **not** point automated tests at live `10.0.0.6`. Hardware acceptance is local/self-hosted only.

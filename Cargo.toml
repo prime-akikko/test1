@@ -38,3 +38,9 @@ unsafe_code = "warn"
 
 [workspace.lints.clippy]
 all = { level = "warn", priority = -1 }
+
+# gpui → zed-async-tar → xattr 0.2.3 breaks on recent libc (ENOATTR removed on
+# linux-gnu). Windows GUI builds never compile this unix dep; Linux/Cloud `gui`
+# checks need the vendored one-line alias fix (ENOATTR → ENODATA).
+[patch.crates-io]
+xattr = { path = "vendor/xattr" }

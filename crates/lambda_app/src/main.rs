@@ -1,49 +1,62 @@
-//! Lambda Modbus GPUI binary entry (shell arrives in M6).
+//! Lambda Modbus GPUI binary.
 //!
-//! Default Cloud/CI build uses the `mock` feature and does not link GPUI.
-//! Windows GUI: `cargo run -p lambda_app --features gui`.
+//! Default Cloud/CI build: `mock` feature, no GPUI link.
+//! Windows GUI: `cargo run -p lambda_app --features gui` (keep `mock` for
+//! in-memory smoke, or `--no-default-features --features gui` for live TCP).
 
 #![forbid(unsafe_code)]
 
-use lambda_core::{defaults, mock_backend_enabled, CoreRuntime};
-
 fn main() {
-    let runtime = CoreRuntime::new();
-    println!("LambdaModbusGui M1 scaffold");
-    println!(
-        "Defaults: {}:{} unit {} | poll {}s | cyclic {}s",
-        defaults::HOST,
-        defaults::PORT,
-        defaults::UNIT_ID,
-        defaults::POLL_INTERVAL_SECS,
-        defaults::CYCLIC_WRITE_INTERVAL_SECS
-    );
-    println!("Mock-Backend aktiv: {}", mock_backend_enabled());
-    println!("Verbindungsstatus: {:?}", runtime.status());
-
     #[cfg(feature = "gui")]
     {
-        // Force-link the pinned crates.io gpui; window bootstrap is M6.
-        let _ = std::any::type_name::<gpui::App>();
-        println!("GPUI-Feature aktiv (Pin crates.io 0.2.2) — UI-Shell folgt in M6");
+        lambda_app::ui::run_gui();
     }
 
     #[cfg(not(feature = "gui"))]
     {
-        println!("GPUI nicht gelinkt (Feature `gui` aus). Für Windows-GUI: --features gui");
+        run_headless_smoke();
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+/// Headless smoke path for Cloud/CI without native GUI libs.
+#[cfg(not(feature = "gui"))]
+fn run_headless_smoke() {
+    use lambda_app::{session::AppSession, state::ShellState, strings};
 
-    #[test]
-    fn smoke_runtime() {
-        let rt = CoreRuntime::new();
-        assert!(matches!(
-            rt.status(),
-            lambda_core::ConnectionStatus::Disconnected
-        ));
+    println!("{}", strings::WINDOW_TITLE);
+    println!("{}", strings::APP_SUBHEADING);
+
+    let mut state = ShellState::new(cfg!(feature = "mock"));
+    let mut session = AppSession::from_shell_defaults();
+
+    println!(
+        "Defaults: {}:{} unit {}",
+        state.connection.host, state.connection.port, state.connection.unit_id
+    );
+    println!("Backend: {}", state.backend_label());
+    println!("Gruppen: {}", state.groups.join(", "));
+
+    // Exercise mock connect → poll → disconnect so CI proves wiring without GPUI.
+    #[cfg(feature = "mock")]
+    {
+        session.connect(&mut state);
+        println!("Nach Verbinden: {}", state.status_label());
+        if let Some(poll) = &state.last_poll {
+            println!(
+                "Erster Poll: {} ok / {} Fehler",
+                poll.ok_count, poll.err_count
+            );
+        }
+        session.disconnect(&mut state);
+        println!("Nach Trennen: {}", state.status_label());
     }
+
+    #[cfg(not(feature = "mock"))]
+    {
+        let _ = (&mut session, &mut state);
+        println!("Mock-Feature aus — kein automatischer Connect (live TCP).");
+        println!("GPUI nicht gelinkt. Für Windows-GUI: --features gui");
+    }
+
+    println!("M6-Shell-State bereit (GUI-Feature aus).");
 }

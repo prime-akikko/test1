@@ -9,6 +9,10 @@ description = "Lambda Modbus GPUI desktop application (Windows-primary)"
 publish = false
 default-run = "lambda_app"
 
+[lib]
+name = "lambda_app"
+path = "src/lib.rs"
+
 [[bin]]
 name = "lambda_app"
 path = "src/main.rs"
@@ -19,12 +23,13 @@ workspace = true
 [features]
 default = ["mock"]
 # Use in-memory Modbus backend (Cloud/CI and local smoke without WP).
-mock = ["lambda_core/mock"]
+mock = ["lambda_core/mock", "dep:lambda_mock"]
 # Enable the GPUI dependency. Default is off so Linux/Cloud `cargo check`
 # stays green without Wayland/X11/Vulkan; Windows GUI builds pass `--features gui`.
 gui = ["dep:gpui"]
 
 [dependencies]
 lambda_core = { workspace = true }
+lambda_mock = { workspace = true, optional = true }
 # Pin decision: crates.io `gpui` 0.2.2 (see README.md). Optional until M6 shell.
 gpui = { workspace = true, optional = true }

@@ -40,9 +40,20 @@ Locked defaults: IP `10.0.0.6`, Port `502`, Unit ID `1`, poll **5s**, cyclic wri
 
 Files under `%APPDATA%\LambdaModbusGui\` (Windows) or `~/.config/LambdaModbusGui` (Linux) / Application Support (macOS): `config.json`, `prefs.json`, `active_setpoints.json`. Atomic temp+rename writes. Override dir with env `LAMBDA_MODBUS_GUI_DATA` (Temp-Dir tests). Corrupt JSON → defaults + warning, no panic.
 
-## Tests (mock-first)
+## Windows packaging (M9)
+
+Release checklist for MSVC + D3D11 builds: [`docs/windows-build.md`](docs/windows-build.md).
+Artefact: `target\release\lambda_app.exe` via
+`cargo build -p lambda_app --release --features gui` (add `--no-default-features` for live TCP).
+
+## Tests (mock-first) — M10
+
 
 Cloud/CI uses `lambda_mock` (in-memory or loopback TCP). Do **not** point automated tests at live `10.0.0.6`. Hardware acceptance is local/self-hosted only.
+
+- Strategy + AC checklist: [`docs/testing.md`](docs/testing.md)
+- Contributor rules: [`CONTRIBUTING.md`](CONTRIBUTING.md)
+- CI: `.github/workflows/ci.yml` (`cargo test --workspace`)
 
 ## Agent setup
 
@@ -52,7 +63,10 @@ Cloud/CI uses `lambda_mock` (in-memory or loopback TCP). Do **not** point automa
 | [`.cursor/rules/`](.cursor/rules/) | Always-on / scoped Cursor rules |
 | [`.cursor/skills/`](.cursor/skills/) | Reusable skills (catalog, GPUI UI, mock tests) |
 | [`.cursor/hooks.json`](.cursor/hooks.json) + [`.cursor/hooks/`](.cursor/hooks/) | `rustfmt` after Rust edits |
-| [`scripts/check.sh`](scripts/check.sh) | `cargo fmt --check` + `cargo check` |
+| [`scripts/check.sh`](scripts/check.sh) | `cargo fmt --check` + `cargo check` (`RUN_TESTS=1` adds tests) |
 | [`crates/lambda_app/README.md`](crates/lambda_app/README.md) | GPUI pin + Windows build notes |
+| [`docs/windows-build.md`](docs/windows-build.md) | M9 Windows release checklist |
+| [`docs/testing.md`](docs/testing.md) | M10 mock-first strategy + hardware AC |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | Cloud=mock; hardware=self-hosted |
 
 Product specs live in the Project Context (`docs/requirements.md`, `docs/architecture.md`, `docs/implementation-plan.md`).

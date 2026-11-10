@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  mock-suite:
+    name: fmt / check / test (mock)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain (from rust-toolchain.toml)
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+          components: rustfmt
+
+      # rust-toolchain.toml in repo overrides; ensure fmt available
+      - name: Sync workspace toolchain
+        run: rustup show
+
+      - name: cargo fmt --check
+        run: cargo fmt --all -- --check
+
+      - name: cargo check --workspace
+        run: cargo check --workspace
+
+      - name: cargo test --workspace
+        run: cargo test --workspace
+
+      # Best-effort GUI typecheck on Linux (may need system libs; non-blocking if we gate later)
+      - name: cargo check lambda_app --features gui
+        run: cargo check -p lambda_app --features gui
+        continue-on-error: true

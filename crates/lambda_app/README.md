@@ -36,6 +36,8 @@ Core wiring: `AppSession` shares a queued transport between `PollScheduler` and 
 
 ## Windows build prerequisites (v1 target)
 
+Full checklist: [`docs/windows-build.md`](../../docs/windows-build.md).
+
 1. [rustup](https://rustup.rs/) target `x86_64-pc-windows-msvc`
 2. Visual Studio Build Tools with **MSVC** C++ toolchain
 3. Windows SDK

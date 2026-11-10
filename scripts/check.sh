@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Minimal workspace check for agents/CI once crates exist.
-# Safe no-op messaging if the Cargo workspace is not scaffolded yet (pre-M1).
+# Workspace check for agents/CI (mock-first — never dials 10.0.0.6).
+# Set RUN_TESTS=1 to also run `cargo test --workspace` (recommended in CI).
 
 set -euo pipefail
 
@@ -19,7 +19,7 @@ echo "==> cargo check --workspace"
 cargo check --workspace
 
 if [[ "${RUN_TESTS:-0}" == "1" ]]; then
-  echo "==> cargo test --workspace"
+  echo "==> cargo test --workspace (mock)"
   cargo test --workspace
 fi
 

@@ -28,6 +28,10 @@ Locked defaults: IP `10.0.0.6`, Port `502`, Unit ID `1`, poll **5s**, cyclic wri
 
 `lambda_core::PollScheduler` reads all catalog parameters on a **5 s** interval (`defaults::POLL_INTERVAL_SECS` / `PollConfig::default`). Manual `read_all` / `read_group`, pause while disconnected, immediate poll on connect, and `last_success_at` are covered. Tests use `FakeClock` + `lambda_mock` (no wall-clock 5 s waits, no live WP).
 
+## Cyclic write scheduler (M5)
+
+`lambda_core::CyclicWriteScheduler` + `ActiveSetpointStore` rewrite confirmed **cyclic** setpoints every **60 s** (`defaults::CYCLIC_WRITE_INTERVAL_SECS` / `CyclicWriteConfig::default`). First write requires `confirmed: true`; cyclic repeats do not. Retained writes stay out of Active unless explicitly activated. `ClearActiveSetpoint` / `ClearAllActiveSetpoints` stop rewrites. Persistence path/model is ready; atomic file I/O is M8. Tests use `FakeClock` + `lambda_mock` (no wall-clock 60 s waits).
+
 ## Tests (mock-first)
 
 Cloud/CI uses `lambda_mock` (in-memory or loopback TCP). Do **not** point automated tests at live `10.0.0.6`. Hardware acceptance is local/self-hosted only.

@@ -20,6 +20,8 @@ mock = ["dep:lambda_mock"]
 lambda_catalog = { workspace = true }
 lambda_modbus = { workspace = true }
 lambda_mock = { workspace = true, optional = true }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
 
 [dev-dependencies]
 lambda_mock = { workspace = true }

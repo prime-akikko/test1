@@ -6,7 +6,8 @@
 
 pub use lambda_catalog;
 pub use lambda_modbus::{
-    ModbusError, ModbusResult, ModbusTransport, DEFAULT_PORT, DEFAULT_UNIT_ID,
+    ClientConfig, ModbusError, ModbusResult, ModbusTransport, QueuedTransport, TcpModbusClient,
+    DEFAULT_PORT, DEFAULT_UNIT_ID, MAX_READ_QUANTITY, MAX_WRITE_QUANTITY,
 };
 
 /// Locked v1 defaults from product decisions.
@@ -126,10 +127,10 @@ pub fn mock_backend_enabled() -> bool {
     false
 }
 
-/// Build a disconnected mock transport when the `mock` feature is enabled.
+/// Build a catalog-seeded mock transport when the `mock` feature is enabled.
 #[cfg(feature = "mock")]
 pub fn new_mock_transport(unit_id: u8) -> lambda_mock::MockSlave {
-    lambda_mock::MockSlave::new(unit_id)
+    lambda_mock::MockSlave::from_catalog(unit_id, lambda_catalog::Catalog::official())
 }
 
 #[cfg(test)]

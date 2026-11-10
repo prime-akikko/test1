@@ -24,6 +24,10 @@ cargo check -p lambda_app --features gui
 
 Locked defaults: IP `10.0.0.6`, Port `502`, Unit ID `1`, poll **5s**, cyclic writes **60s**, official register map only, German UI, Windows primary, mock-first tests.
 
+## Tests (mock-first)
+
+Cloud/CI uses `lambda_mock` (in-memory or loopback TCP). Do **not** point automated tests at live `10.0.0.6`. Hardware acceptance is local/self-hosted only.
+
 ## Agent setup
 
 | Path | Purpose |

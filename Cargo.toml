@@ -1,0 +1,40 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/lambda_catalog",
+    "crates/lambda_modbus",
+    "crates/lambda_core",
+    "crates/lambda_mock",
+    "crates/lambda_app",
+]
+default-members = [
+    "crates/lambda_catalog",
+    "crates/lambda_modbus",
+    "crates/lambda_core",
+    "crates/lambda_mock",
+    "crates/lambda_app",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+rust-version = "1.85"
+authors = ["Lambda Modbus GUI contributors"]
+description = "Lambda EU13L Modbus TCP desktop GUI (GPUI)"
+
+[workspace.dependencies]
+lambda_catalog = { path = "crates/lambda_catalog", version = "0.1.0" }
+lambda_modbus = { path = "crates/lambda_modbus", version = "0.1.0" }
+lambda_core = { path = "crates/lambda_core", version = "0.1.0" }
+lambda_mock = { path = "crates/lambda_mock", version = "0.1.0" }
+# GPUI pin (M1 decision, 2026-11-10): crates.io exact version — Windows-primary.
+# Constraints: Rust ≥ 1.85 (gpui uses edition 2024), MSVC + Windows SDK, D3D11 FL ≥ 11.0.
+# Do not float on zed/zed `main`; bump intentionally with a lockfile update.
+gpui = { version = "=0.2.2" }
+
+[workspace.lints.rust]
+unsafe_code = "warn"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }

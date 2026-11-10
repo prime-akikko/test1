@@ -1,0 +1,15 @@
+[package]
+name = "lambda_mock"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+description = "In-memory Modbus slave for mock-first tests"
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+lambda_modbus = { workspace = true }

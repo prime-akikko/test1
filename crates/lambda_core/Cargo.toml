@@ -1,0 +1,22 @@
+[package]
+name = "lambda_core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+description = "Internal API, schedulers, and local stores for Lambda Modbus GUI"
+publish = false
+
+[lints]
+workspace = true
+
+[features]
+default = []
+# Swap production TCP for the in-memory mock (tests / Cloud / CI).
+mock = ["dep:lambda_mock"]
+
+[dependencies]
+lambda_catalog = { workspace = true }
+lambda_modbus = { workspace = true }
+lambda_mock = { workspace = true, optional = true }

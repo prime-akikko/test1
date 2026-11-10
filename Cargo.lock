@@ -2894,6 +2894,8 @@ dependencies = [
  "lambda_catalog",
  "lambda_mock",
  "lambda_modbus",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

@@ -1,42 +1,59 @@
-//! Mock-first backend session for the shell: drives [`PollScheduler`] and mirrors events.
-//!
-//! Cyclic Active-Setpoint rewrites are shown as an empty panel in M6; full write UI is M7.
-//! When the `mock` feature is off, connect uses the real TCP client (local Windows path).
+//! Mock-first backend session: shared-queue poll + cyclic write schedulers.
 
 use std::time::Duration;
 
 use lambda_core::{
-    defaults, ConnectionStatus, Event, PollConfig, PollScheduler, DEFAULT_POLL_INTERVAL,
+    defaults, ActiveSetpoint, ConnectionStatus, CyclicWriteConfig, CyclicWriteScheduler, Event,
+    PollConfig, PollScheduler, QueuedTransport, DEFAULT_CYCLIC_WRITE_INTERVAL,
+    DEFAULT_POLL_INTERVAL,
 };
 
 use crate::state::ShellState;
 use crate::strings;
 
-/// Owns the Modbus-backed poll scheduler used by the desktop shell.
+#[cfg(feature = "mock")]
+type MockQueue = QueuedTransport<lambda_mock::MockSlave>;
+#[cfg(not(feature = "mock"))]
+type LiveQueue = QueuedTransport<lambda_core::TcpModbusClient>;
+
+/// Owns poll + cyclic schedulers on one serialized Modbus transport.
 pub struct AppSession {
     inner: SessionInner,
 }
 
 enum SessionInner {
     #[cfg(feature = "mock")]
-    Mock(PollScheduler<lambda_core::QueuedTransport<lambda_mock::MockSlave>>),
+    Mock {
+        poll: PollScheduler<MockQueue>,
+        cyclic: CyclicWriteScheduler<MockQueue>,
+    },
     #[cfg(not(feature = "mock"))]
-    Live(PollScheduler<lambda_core::TcpModbusClient>),
+    Live {
+        poll: PollScheduler<LiveQueue>,
+        cyclic: CyclicWriteScheduler<LiveQueue>,
+    },
 }
 
 impl AppSession {
-    /// Build a session. With default app features this is the in-memory mock.
+    /// Build a session. Default app features → in-memory mock.
     pub fn new(unit_id: u8) -> Self {
-        let config = PollConfig {
+        let poll_cfg = PollConfig {
             unit_id,
             poll_interval: DEFAULT_POLL_INTERVAL,
+        };
+        let cyclic_cfg = CyclicWriteConfig {
+            unit_id,
+            write_interval: DEFAULT_CYCLIC_WRITE_INTERVAL,
+            rewrite_on_connect: true,
         };
         #[cfg(feature = "mock")]
         {
             let slave = lambda_core::new_mock_transport(unit_id);
-            let transport = lambda_core::QueuedTransport::new(slave);
+            let transport = QueuedTransport::new(slave);
+            let poll = PollScheduler::new(transport.clone(), poll_cfg);
+            let cyclic = CyclicWriteScheduler::new(transport, cyclic_cfg);
             Self {
-                inner: SessionInner::Mock(PollScheduler::new(transport, config)),
+                inner: SessionInner::Mock { poll, cyclic },
             }
         }
         #[cfg(not(feature = "mock"))]
@@ -45,8 +62,11 @@ impl AppSession {
                 unit_id,
                 ..Default::default()
             });
+            let transport = QueuedTransport::new(client);
+            let poll = PollScheduler::new(transport.clone(), poll_cfg);
+            let cyclic = CyclicWriteScheduler::new(transport, cyclic_cfg);
             Self {
-                inner: SessionInner::Live(PollScheduler::new(client, config)),
+                inner: SessionInner::Live { poll, cyclic },
             }
         }
     }
@@ -58,18 +78,27 @@ impl AppSession {
     pub fn status(&self) -> &ConnectionStatus {
         match &self.inner {
             #[cfg(feature = "mock")]
-            SessionInner::Mock(p) => p.status(),
+            SessionInner::Mock { poll, .. } => poll.status(),
             #[cfg(not(feature = "mock"))]
-            SessionInner::Live(p) => p.status(),
+            SessionInner::Live { poll, .. } => poll.status(),
         }
     }
 
     pub fn poll_interval(&self) -> Duration {
         match &self.inner {
             #[cfg(feature = "mock")]
-            SessionInner::Mock(p) => p.poll_interval(),
+            SessionInner::Mock { poll, .. } => poll.poll_interval(),
             #[cfg(not(feature = "mock"))]
-            SessionInner::Live(p) => p.poll_interval(),
+            SessionInner::Live { poll, .. } => poll.poll_interval(),
+        }
+    }
+
+    pub fn active_entries(&self) -> &[ActiveSetpoint] {
+        match &self.inner {
+            #[cfg(feature = "mock")]
+            SessionInner::Mock { cyclic, .. } => cyclic.store().entries(),
+            #[cfg(not(feature = "mock"))]
+            SessionInner::Live { cyclic, .. } => cyclic.store().entries(),
         }
     }
 
@@ -91,16 +120,29 @@ impl AppSession {
             }
         };
 
-        // Rebuild session if unit id changed (mock/TCP config carries unit).
         if unit_id != self.unit_id() {
             *self = Self::new(unit_id);
         }
 
         let result = match &mut self.inner {
             #[cfg(feature = "mock")]
-            SessionInner::Mock(p) => p.connect(&host, port),
+            SessionInner::Mock { poll, cyclic } => {
+                let r = poll.connect(&host, port);
+                match &r {
+                    Ok(()) => cyclic.bind_connected(),
+                    Err(err) => cyclic.bind_error(err.to_string()),
+                }
+                r
+            }
             #[cfg(not(feature = "mock"))]
-            SessionInner::Live(p) => p.connect(&host, port),
+            SessionInner::Live { poll, cyclic } => {
+                let r = poll.connect(&host, port);
+                match &r {
+                    Ok(()) => cyclic.bind_connected(),
+                    Err(err) => cyclic.bind_error(err.to_string()),
+                }
+                r
+            }
         };
         self.drain_into(state);
         if let Err(err) = result {
@@ -111,9 +153,15 @@ impl AppSession {
     pub fn disconnect(&mut self, state: &mut ShellState) {
         match &mut self.inner {
             #[cfg(feature = "mock")]
-            SessionInner::Mock(p) => p.disconnect(),
+            SessionInner::Mock { poll, cyclic } => {
+                poll.disconnect();
+                cyclic.bind_disconnected();
+            }
             #[cfg(not(feature = "mock"))]
-            SessionInner::Live(p) => p.disconnect(),
+            SessionInner::Live { poll, cyclic } => {
+                poll.disconnect();
+                cyclic.bind_disconnected();
+            }
         }
         self.drain_into(state);
     }
@@ -125,9 +173,9 @@ impl AppSession {
         }
         let ran = match &mut self.inner {
             #[cfg(feature = "mock")]
-            SessionInner::Mock(p) => p.read_all(),
+            SessionInner::Mock { poll, .. } => poll.read_all(),
             #[cfg(not(feature = "mock"))]
-            SessionInner::Live(p) => p.read_all(),
+            SessionInner::Live { poll, .. } => poll.read_all(),
         };
         self.drain_into(state);
         if !ran {
@@ -135,7 +183,6 @@ impl AppSession {
         }
     }
 
-    /// Focus-group hint: optional targeted read (still M6 — main list is placeholder).
     pub fn refresh_selected_group(&mut self, state: &mut ShellState) {
         if !matches!(self.status(), ConnectionStatus::Connected) {
             return;
@@ -143,41 +190,117 @@ impl AppSession {
         let group = state.selected_group.clone();
         let _ = match &mut self.inner {
             #[cfg(feature = "mock")]
-            SessionInner::Mock(p) => p.read_group(&group),
+            SessionInner::Mock { poll, .. } => poll.read_group(&group),
             #[cfg(not(feature = "mock"))]
-            SessionInner::Live(p) => p.read_group(&group),
+            SessionInner::Live { poll, .. } => poll.read_group(&group),
         };
         self.drain_into(state);
     }
 
-    /// Advance the poll timer if due.
+    /// Advance poll + cyclic timers if due.
     pub fn tick(&mut self, state: &mut ShellState) -> bool {
-        let ran = match &mut self.inner {
+        let poll_ran = match &mut self.inner {
             #[cfg(feature = "mock")]
-            SessionInner::Mock(p) => p.tick(),
+            SessionInner::Mock { poll, .. } => poll.tick(),
             #[cfg(not(feature = "mock"))]
-            SessionInner::Live(p) => p.tick(),
+            SessionInner::Live { poll, .. } => poll.tick(),
+        };
+        let cyclic_ran = match &mut self.inner {
+            #[cfg(feature = "mock")]
+            SessionInner::Mock { cyclic, .. } => cyclic.tick(),
+            #[cfg(not(feature = "mock"))]
+            SessionInner::Live { cyclic, .. } => cyclic.tick(),
         };
         self.drain_into(state);
-        ran
+        poll_ran || cyclic_ran
+    }
+
+    /// Confirmed single-register write (`confirmed` must be true).
+    pub fn write_register(
+        &mut self,
+        state: &mut ShellState,
+        param_id: &str,
+        display_value: f64,
+        confirmed: bool,
+    ) {
+        let _ = match &mut self.inner {
+            #[cfg(feature = "mock")]
+            SessionInner::Mock { cyclic, .. } => {
+                cyclic.write_register(param_id, display_value, confirmed)
+            }
+            #[cfg(not(feature = "mock"))]
+            SessionInner::Live { cyclic, .. } => {
+                cyclic.write_register(param_id, display_value, confirmed)
+            }
+        };
+        self.drain_into(state);
+    }
+
+    /// Confirmed write-group FC 0x10.
+    pub fn write_register_group(
+        &mut self,
+        state: &mut ShellState,
+        write_group_id: &str,
+        values: &[(String, f64)],
+        confirmed: bool,
+    ) {
+        let _ = match &mut self.inner {
+            #[cfg(feature = "mock")]
+            SessionInner::Mock { cyclic, .. } => {
+                cyclic.write_register_group(write_group_id, values, confirmed)
+            }
+            #[cfg(not(feature = "mock"))]
+            SessionInner::Live { cyclic, .. } => {
+                cyclic.write_register_group(write_group_id, values, confirmed)
+            }
+        };
+        self.drain_into(state);
+    }
+
+    pub fn clear_active_setpoint(&mut self, state: &mut ShellState, key: &str) {
+        let _ = match &mut self.inner {
+            #[cfg(feature = "mock")]
+            SessionInner::Mock { cyclic, .. } => cyclic.clear_active_setpoint(key),
+            #[cfg(not(feature = "mock"))]
+            SessionInner::Live { cyclic, .. } => cyclic.clear_active_setpoint(key),
+        };
+        self.drain_into(state);
+    }
+
+    pub fn clear_all_active_setpoints(&mut self, state: &mut ShellState, confirmed: bool) {
+        let _ = match &mut self.inner {
+            #[cfg(feature = "mock")]
+            SessionInner::Mock { cyclic, .. } => cyclic.clear_all_active_setpoints(confirmed),
+            #[cfg(not(feature = "mock"))]
+            SessionInner::Live { cyclic, .. } => cyclic.clear_all_active_setpoints(confirmed),
+        };
+        self.drain_into(state);
     }
 
     pub fn drain_into(&mut self, state: &mut ShellState) {
-        let events: Vec<Event> = match &mut self.inner {
+        let mut events: Vec<Event> = Vec::new();
+        match &mut self.inner {
             #[cfg(feature = "mock")]
-            SessionInner::Mock(p) => p.drain_events(),
+            SessionInner::Mock { poll, cyclic } => {
+                events.extend(poll.drain_events());
+                events.extend(cyclic.drain_events());
+            }
             #[cfg(not(feature = "mock"))]
-            SessionInner::Live(p) => p.drain_events(),
-        };
+            SessionInner::Live { poll, cyclic } => {
+                events.extend(poll.drain_events());
+                events.extend(cyclic.drain_events());
+            }
+        }
         state.apply_events(events);
+        state.sync_active_from(self.active_entries());
     }
 
     fn unit_id(&self) -> u8 {
         match &self.inner {
             #[cfg(feature = "mock")]
-            SessionInner::Mock(p) => p.config().unit_id,
+            SessionInner::Mock { poll, .. } => poll.config().unit_id,
             #[cfg(not(feature = "mock"))]
-            SessionInner::Live(p) => p.config().unit_id,
+            SessionInner::Live { poll, .. } => poll.config().unit_id,
         }
     }
 }
@@ -185,6 +308,8 @@ impl AppSession {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use lambda_catalog::{Access, Catalog, PersistenceClass};
+    use lambda_core::ValueQuality;
 
     #[test]
     fn mock_connect_poll_disconnect() {
@@ -198,8 +323,8 @@ mod tests {
             state.status_message
         );
         assert!(state.last_poll.is_some(), "connect should trigger a poll");
+        assert!(!state.parameters.is_empty());
         session.refresh(&mut state);
-        assert!(state.last_poll.is_some());
         session.disconnect(&mut state);
         assert!(!state.is_connected());
     }
@@ -210,5 +335,93 @@ mod tests {
         let mut state = ShellState::new(true);
         session.refresh(&mut state);
         assert_eq!(state.status_message, strings::MSG_NOT_CONNECTED);
+    }
+
+    #[test]
+    fn confirmed_write_updates_value_and_active_for_cyclic() {
+        let catalog = Catalog::official();
+        let param = catalog
+            .parameters
+            .iter()
+            .find(|p| {
+                p.access == Access::ReadWrite
+                    && p.write_group_id.is_none()
+                    && p.persistence_class == PersistenceClass::Cyclic
+                    && p.group == "Heizkreis 1"
+            })
+            .expect("cyclic RW HK1 param");
+
+        let mut session = AppSession::from_shell_defaults();
+        let mut state = ShellState::new(true);
+        session.connect(&mut state);
+        state.select_group("Heizkreis 1");
+
+        session.write_register(&mut state, &param.param_id, 25.0, false);
+        assert!(state.active_entries.is_empty());
+        assert!(
+            state.status_message.contains("nicht bestätigt")
+                || state.status_message.contains("bestätigt")
+        );
+
+        session.write_register(&mut state, &param.param_id, 25.0, true);
+        assert!(
+            !state.active_entries.is_empty(),
+            "cyclic write should enter Active"
+        );
+        let row = state
+            .parameters
+            .iter()
+            .find(|r| r.param_id == param.param_id)
+            .expect("row");
+        assert_eq!(row.quality, Some(ValueQuality::Good));
+        assert!(row.display.is_some());
+
+        session.clear_active_setpoint(&mut state, &param.param_id);
+        assert!(state.active_entries.is_empty());
+    }
+
+    #[test]
+    fn read_only_write_rejected() {
+        let catalog = Catalog::official();
+        let param = catalog
+            .parameters
+            .iter()
+            .find(|p| p.access == Access::Read && p.group == "Allgemein")
+            .expect("RO param");
+        let mut session = AppSession::from_shell_defaults();
+        let mut state = ShellState::new(true);
+        session.connect(&mut state);
+        session.write_register(&mut state, &param.param_id, 1.0, true);
+        assert!(state.active_entries.is_empty());
+        assert!(
+            state.status_message.contains("nicht schreibbar")
+                || state.status_message.contains("Schreib")
+        );
+    }
+
+    #[test]
+    fn write_group_confirm_path() {
+        let catalog = Catalog::official();
+        let group = catalog.by_write_group("buffer.request_temps");
+        assert!(group.len() >= 2);
+        let values: Vec<(String, f64)> = group.iter().map(|p| (p.param_id.clone(), 30.0)).collect();
+
+        let mut session = AppSession::from_shell_defaults();
+        let mut state = ShellState::new(true);
+        session.connect(&mut state);
+
+        // Cancel semantics at UI layer: confirmed=false must not activate.
+        session.write_register_group(&mut state, "buffer.request_temps", &values, false);
+        assert!(state.active_entries.is_empty());
+
+        session.write_register_group(&mut state, "buffer.request_temps", &values, true);
+        assert!(
+            state
+                .active_entries
+                .iter()
+                .any(|e| e.key == "buffer.request_temps" || e.label.contains("buffer")),
+            "group should appear in Active: {:?}",
+            state.active_entries
+        );
     }
 }

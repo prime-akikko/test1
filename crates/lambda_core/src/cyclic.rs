@@ -172,6 +172,38 @@ impl<T: ModbusTransport, C: Clock> CyclicWriteScheduler<T, C> {
         self.set_status(ConnectionStatus::Disconnected);
     }
 
+    /// Shared-transport helper: peer already dialled; arm cyclic without reconnecting.
+    ///
+    /// Used by the app shell when [`PollScheduler`] owns the connect call on a
+    /// cloned [`crate::QueuedTransport`].
+    pub fn bind_connected(&mut self) {
+        if !self.transport.is_connected() {
+            return;
+        }
+        self.set_status(ConnectionStatus::Connected);
+        if self.config.rewrite_on_connect && !self.store.is_empty() {
+            self.run_cyclic_pass();
+        } else if self.is_write_allowed() {
+            self.next_write_at = Some(self.clock.now() + self.config.write_interval);
+        }
+    }
+
+    /// Shared-transport helper: peer disconnected the socket; pause without dialling.
+    pub fn bind_disconnected(&mut self) {
+        self.next_write_at = None;
+        if !matches!(self.status, ConnectionStatus::Disconnected) {
+            self.set_status(ConnectionStatus::Disconnected);
+        }
+    }
+
+    /// Mirror a connection error reported by the peer scheduler.
+    pub fn bind_error(&mut self, message: impl Into<String>) {
+        self.next_write_at = None;
+        self.set_status(ConnectionStatus::Error {
+            message: message.into(),
+        });
+    }
+
     /// Timer step: if due and connected, rewrite all Active entries.
     ///
     /// Returns `true` when a cyclic pass ran.

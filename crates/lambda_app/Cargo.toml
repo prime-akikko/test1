@@ -30,6 +30,7 @@ gui = ["dep:gpui"]
 
 [dependencies]
 lambda_core = { workspace = true }
+lambda_catalog = { workspace = true }
 lambda_mock = { workspace = true, optional = true }
 # Pin decision: crates.io `gpui` 0.2.2 (see README.md). Optional until M6 shell.
 gpui = { workspace = true, optional = true }

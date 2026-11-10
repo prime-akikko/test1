@@ -21,17 +21,18 @@ cargo run -p lambda_app --features gui
 
 Default features enable `mock` only (in-memory backend for Cloud/CI).
 
-## M6 shell (German UI)
+## M6/M7 shell (German UI)
 
 Layout:
 
 1. **Verbindung** — Host / Port / Unit-ID (Defaults `10.0.0.6` / `502` / `1`), buttons **Verbinden** / **Trennen** / **Jetzt aktualisieren**
 2. **Gruppen** — Allgemein, E-Manager, Wärmepumpe, Warmwasser, Puffer, Solar, **Heizkreis 1**, **Heizkreis 2**
-3. **Parameter** — placeholder until M7 (R/W + „Wirklich schreiben?“)
-4. **Aktive Sollwerte** — panel present (empty until confirmed writes in M7)
-5. **Status** — Verbindungsstatus, letzter Poll, zyklischer Hinweis, Mock/TCP-Backend
+3. **Parameter** — scrollable list (Name, Adr., Typ, Skala, Einheit, Roh, Wert, R/W, Qualität); Suche; RW-Edit + **Schreiben**
+4. **Bestätigung** — Dialog **„Wirklich schreiben?“** (Abbrechen = kein Modbus-Write); Schreibgruppen → ein Dialog / `WriteRegisterGroup`
+5. **Aktive Sollwerte** — nach bestätigtem cyclic Write; Freigeben / Alle freigeben; 60 s-Rewrite ohne neuen Dialog
+6. **Status** — Verbindung, Poll, zyklisch, Mock/TCP-Backend
 
-Core wiring: `AppSession` drives `PollScheduler` over mock (default) or TCP; UI state maps `ConnectionChanged` / `Poll*` events. Cyclic Active-Setpoint **writes** remain M7; the panel/status slots are already in the shell.
+Core wiring: `AppSession` shares a queued transport between `PollScheduler` and `CyclicWriteScheduler`. Default backend is `mock`.
 
 ## Windows build prerequisites (v1 target)
 

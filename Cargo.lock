@@ -2876,6 +2876,7 @@ name = "lambda_app"
 version = "0.1.0"
 dependencies = [
  "gpui",
+ "lambda_catalog",
  "lambda_core",
  "lambda_mock",
 ]

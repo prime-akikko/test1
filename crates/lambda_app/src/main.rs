@@ -58,5 +58,5 @@ fn run_headless_smoke() {
         println!("GPUI nicht gelinkt. Für Windows-GUI: --features gui");
     }
 
-    println!("M6-Shell-State bereit (GUI-Feature aus).");
+    println!("M7-Parameter-R/W-State bereit (GUI-Feature aus).");
 }

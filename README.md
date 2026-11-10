@@ -56,9 +56,7 @@ Cloud/CI uses `lambda_mock` (in-memory or loopback TCP). Do **not** point automa
 | [`.cursor/rules/`](.cursor/rules/) | Always-on / scoped Cursor rules |
 | [`.cursor/skills/`](.cursor/skills/) | Reusable skills (catalog, GPUI UI, mock tests) |
 | [`.cursor/hooks.json`](.cursor/hooks.json) + [`.cursor/hooks/`](.cursor/hooks/) | `rustfmt` after Rust edits |
-| [`scripts/check.sh`](scripts/check.sh) | `cargo fmt --check` + `cargo check` (`RUN_TESTS=1` adds tests) |
+| [`scripts/check.sh`](scripts/check.sh) | `cargo fmt --check` + `cargo check` |
 | [`crates/lambda_app/README.md`](crates/lambda_app/README.md) | GPUI pin + Windows build notes |
-| [`docs/testing.md`](docs/testing.md) | M10 mock-first strategy + hardware AC |
-| [`CONTRIBUTING.md`](CONTRIBUTING.md) | Cloud=mock; hardware=self-hosted |
 
 Product specs live in the Project Context (`docs/requirements.md`, `docs/architecture.md`, `docs/implementation-plan.md`).

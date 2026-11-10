@@ -50,6 +50,10 @@ Artefact: `target\release\lambda_app.exe` via
 
 Cloud/CI uses `lambda_mock` (in-memory or loopback TCP). Do **not** point automated tests at live `10.0.0.6`. Hardware acceptance is local/self-hosted only.
 
+- Strategy + AC checklist: [`docs/testing.md`](docs/testing.md)
+- Contributor rules: [`CONTRIBUTING.md`](CONTRIBUTING.md)
+- CI: `.github/workflows/ci.yml` (`cargo test --workspace`)
+
 ## Agent setup
 
 | Path | Purpose |

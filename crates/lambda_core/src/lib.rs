@@ -1,8 +1,24 @@
-//! Application core: commands, events, schedulers, stores (skeleton — M4+).
+//! Application core: commands, events, poll scheduler, stores.
 //!
 //! UI talks only to this crate. Modbus sockets stay behind `lambda_modbus`.
+//!
+//! ## Poll interval (M4)
+//!
+//! Production default is **[`defaults::POLL_INTERVAL_SECS`] = 5** seconds
+//! ([`poll::DEFAULT_POLL_INTERVAL`]). Tests inject a short interval / [`FakeClock`]
+//! and drive [`PollScheduler::tick`] — no real 5 s sleeps.
+//!
+//! Cyclic writes (60 s) arrive in M5; GPUI in M6+.
 
 #![forbid(unsafe_code)]
+
+mod clock;
+mod poll;
+mod value;
+
+pub use clock::{Clock, FakeClock, SystemClock};
+pub use poll::{PollConfig, PollScheduler, DEFAULT_POLL_INTERVAL};
+pub use value::{ParameterValue, ValueQuality};
 
 pub use lambda_catalog;
 pub use lambda_modbus::{
@@ -15,6 +31,7 @@ pub mod defaults {
     pub const HOST: &str = "10.0.0.6";
     pub const PORT: u16 = super::DEFAULT_PORT;
     pub const UNIT_ID: u8 = super::DEFAULT_UNIT_ID;
+    /// Production poll / read interval in seconds (architecture §10.1).
     pub const POLL_INTERVAL_SECS: u32 = 5;
     pub const CYCLIC_WRITE_INTERVAL_SECS: u32 = 60;
     pub const CONNECT_TIMEOUT_MS: u32 = 3000;
@@ -30,6 +47,14 @@ pub enum ConnectionStatus {
     Connected,
     Reconnecting,
     Error { message: String },
+}
+
+/// Why a poll cycle started (architecture §5.2).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PollTrigger {
+    Timer,
+    Manual,
+    PostWrite,
 }
 
 /// Commands from UI → core (Internal API surface).
@@ -71,14 +96,35 @@ pub enum Command {
 /// Events from core → UI.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Event {
-    ConnectionChanged { status: ConnectionStatus },
-    PollStarted,
-    PollCompleted { ok_count: u32, err_count: u32 },
-    WriteRejected { reason: String },
+    ConnectionChanged {
+        status: ConnectionStatus,
+    },
+    PollStarted {
+        trigger: PollTrigger,
+    },
+    PollCompleted {
+        ok_count: u32,
+        err_count: u32,
+    },
+    ParameterUpdated {
+        param_id: String,
+        raw: i64,
+        display: f64,
+        quality: ValueQuality,
+    },
+    ParameterError {
+        param_id: String,
+        message: String,
+    },
+    WriteRejected {
+        reason: String,
+    },
     ActiveSetpointsChanged,
 }
 
-/// Placeholder runtime handle (schedulers arrive in M4/M5).
+/// Lightweight handle for shared helpers (write confirmation, status defaults).
+///
+/// Live polling lives on [`PollScheduler`] (M4). Cyclic writes follow in M5.
 #[derive(Debug)]
 pub struct CoreRuntime {
     status: ConnectionStatus,
@@ -143,6 +189,7 @@ mod tests {
         assert_eq!(defaults::CYCLIC_WRITE_INTERVAL_SECS, 60);
         assert_eq!(defaults::HOST, "10.0.0.6");
         assert_eq!(defaults::UNIT_ID, 1);
+        assert_eq!(DEFAULT_POLL_INTERVAL.as_secs(), 5);
     }
 
     #[test]

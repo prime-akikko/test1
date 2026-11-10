@@ -24,6 +24,10 @@ cargo check -p lambda_app --features gui
 
 Locked defaults: IP `10.0.0.6`, Port `502`, Unit ID `1`, poll **5s**, cyclic writes **60s**, official register map only, German UI, Windows primary, mock-first tests.
 
+## Poll scheduler (M4)
+
+`lambda_core::PollScheduler` reads all catalog parameters on a **5 s** interval (`defaults::POLL_INTERVAL_SECS` / `PollConfig::default`). Manual `read_all` / `read_group`, pause while disconnected, immediate poll on connect, and `last_success_at` are covered. Tests use `FakeClock` + `lambda_mock` (no wall-clock 5 s waits, no live WP).
+
 ## Tests (mock-first)
 
 Cloud/CI uses `lambda_mock` (in-memory or loopback TCP). Do **not** point automated tests at live `10.0.0.6`. Hardware acceptance is local/self-hosted only.

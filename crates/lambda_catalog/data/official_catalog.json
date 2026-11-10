@@ -1,0 +1,2457 @@
+{
+  "schema_version": 1,
+  "source": "lambda-modbus-protokoll-1.0",
+  "model_hint": "EU13L",
+  "modules": [
+    {
+      "module_id": "general",
+      "index": 0,
+      "label_de": "Allgemein",
+      "instances": [
+        {
+          "subindex": 0,
+          "label_de": "Allgemein",
+          "heating_circuit_index": null
+        }
+      ]
+    },
+    {
+      "module_id": "emanager",
+      "index": 0,
+      "label_de": "E-Manager",
+      "instances": [
+        {
+          "subindex": 1,
+          "label_de": "E-Manager",
+          "heating_circuit_index": null
+        }
+      ]
+    },
+    {
+      "module_id": "heatpump",
+      "index": 1,
+      "label_de": "Wärmepumpe",
+      "instances": [
+        {
+          "subindex": 0,
+          "label_de": "Wärmepumpe",
+          "heating_circuit_index": null
+        }
+      ]
+    },
+    {
+      "module_id": "dhw",
+      "index": 2,
+      "label_de": "Warmwasser",
+      "instances": [
+        {
+          "subindex": 0,
+          "label_de": "Warmwasser",
+          "heating_circuit_index": null
+        }
+      ]
+    },
+    {
+      "module_id": "buffer",
+      "index": 3,
+      "label_de": "Puffer",
+      "instances": [
+        {
+          "subindex": 0,
+          "label_de": "Puffer",
+          "heating_circuit_index": null
+        }
+      ]
+    },
+    {
+      "module_id": "solar",
+      "index": 4,
+      "label_de": "Solar",
+      "instances": [
+        {
+          "subindex": 0,
+          "label_de": "Solar",
+          "heating_circuit_index": null
+        }
+      ]
+    },
+    {
+      "module_id": "heating_circuit",
+      "index": 5,
+      "label_de": "Heizkreis",
+      "instances": [
+        {
+          "subindex": 0,
+          "label_de": "Heizkreis 1",
+          "heating_circuit_index": 1
+        },
+        {
+          "subindex": 1,
+          "label_de": "Heizkreis 2",
+          "heating_circuit_index": 2
+        }
+      ]
+    }
+  ],
+  "parameters": [
+    {
+      "description_de": "Fehlercode; 0 = kein Fehler",
+      "range_min": null,
+      "range_max": null,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "general.0.error_number",
+      "module_id": "general",
+      "group": "Allgemein",
+      "heating_circuit_index": null,
+      "index": 0,
+      "subindex": 0,
+      "datapoint": 0,
+      "data_type": "int16",
+      "scale": 1.0,
+      "unit": "Nr",
+      "access": "r",
+      "label_de": "Fehlernummer",
+      "source_ref": "pdf:p5 §3.1",
+      "persistence_class": "cyclic",
+      "address": 0,
+      "register_count": 1
+    },
+    {
+      "description_de": "Allgemeiner Betriebsmodus",
+      "range_min": null,
+      "range_max": null,
+      "enum_values": [
+        {
+          "raw": 0,
+          "label_de": "Aus"
+        },
+        {
+          "raw": 1,
+          "label_de": "Automatik"
+        },
+        {
+          "raw": 2,
+          "label_de": "Manuell"
+        },
+        {
+          "raw": 3,
+          "label_de": "Störung"
+        }
+      ],
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "general.0.operating_mode",
+      "module_id": "general",
+      "group": "Allgemein",
+      "heating_circuit_index": null,
+      "index": 0,
+      "subindex": 0,
+      "datapoint": 1,
+      "data_type": "uint16",
+      "scale": 1.0,
+      "unit": "Nr",
+      "access": "r",
+      "label_de": "Betriebsmodus",
+      "source_ref": "pdf:p5 §3.1",
+      "persistence_class": "cyclic",
+      "address": 1,
+      "register_count": 1
+    },
+    {
+      "description_de": "Außentemperatur",
+      "range_min": null,
+      "range_max": null,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "general.0.outdoor_temp",
+      "module_id": "general",
+      "group": "Allgemein",
+      "heating_circuit_index": null,
+      "index": 0,
+      "subindex": 0,
+      "datapoint": 2,
+      "data_type": "int16",
+      "scale": 0.1,
+      "unit": "°C",
+      "access": "rw",
+      "label_de": "Außentemperatur",
+      "source_ref": "pdf:p5 §3.1",
+      "persistence_class": "cyclic",
+      "address": 2,
+      "register_count": 1
+    },
+    {
+      "description_de": "Arithmetischer Mittelwert der Außentemperatur über die letzten 60 Minuten",
+      "range_min": null,
+      "range_max": null,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "general.0.outdoor_temp_1h_avg",
+      "module_id": "general",
+      "group": "Allgemein",
+      "heating_circuit_index": null,
+      "index": 0,
+      "subindex": 0,
+      "datapoint": 3,
+      "data_type": "int16",
+      "scale": 0.1,
+      "unit": "°C",
+      "access": "r",
+      "label_de": "Außentemperatur 1h Mittelwert",
+      "source_ref": "pdf:p5 §3.1",
+      "persistence_class": "cyclic",
+      "address": 3,
+      "register_count": 1
+    },
+    {
+      "description_de": "Gemittelte Außentemperatur, welche zur Berechnung der Vorlauftemperatur genutzt wird",
+      "range_min": null,
+      "range_max": null,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "general.0.outdoor_temp_calculated",
+      "module_id": "general",
+      "group": "Allgemein",
+      "heating_circuit_index": null,
+      "index": 0,
+      "subindex": 0,
+      "datapoint": 4,
+      "data_type": "int16",
+      "scale": 0.1,
+      "unit": "°C",
+      "access": "r",
+      "label_de": "Berechnete Außentemperatur",
+      "source_ref": "pdf:p5 §3.1",
+      "persistence_class": "cyclic",
+      "address": 4,
+      "register_count": 1
+    },
+    {
+      "description_de": "Fehlercode; 0 = kein Fehler",
+      "range_min": null,
+      "range_max": null,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "emanager.1.error_number",
+      "module_id": "emanager",
+      "group": "E-Manager",
+      "heating_circuit_index": null,
+      "index": 0,
+      "subindex": 1,
+      "datapoint": 0,
+      "data_type": "int16",
+      "scale": 1.0,
+      "unit": "Nr",
+      "access": "r",
+      "label_de": "Fehlernummer",
+      "source_ref": "pdf:p5 §3.2",
+      "persistence_class": "cyclic",
+      "address": 100,
+      "register_count": 1
+    },
+    {
+      "description_de": "E-Manager Betriebsmodus",
+      "range_min": null,
+      "range_max": null,
+      "enum_values": [
+        {
+          "raw": 0,
+          "label_de": "Aus"
+        },
+        {
+          "raw": 1,
+          "label_de": "Automatik"
+        },
+        {
+          "raw": 2,
+          "label_de": "Manuell"
+        },
+        {
+          "raw": 3,
+          "label_de": "Störung"
+        },
+        {
+          "raw": 4,
+          "label_de": "Offline"
+        }
+      ],
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "emanager.1.operating_mode",
+      "module_id": "emanager",
+      "group": "E-Manager",
+      "heating_circuit_index": null,
+      "index": 0,
+      "subindex": 1,
+      "datapoint": 1,
+      "data_type": "uint16",
+      "scale": 1.0,
+      "unit": "Nr",
+      "access": "r",
+      "label_de": "Betriebsmodus",
+      "source_ref": "pdf:p5 §3.2",
+      "persistence_class": "cyclic",
+      "address": 101,
+      "register_count": 1
+    },
+    {
+      "description_de": "Netzbezug / Einspeisung am Zählpunkt",
+      "range_min": null,
+      "range_max": null,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "emanager.1.grid_power",
+      "module_id": "emanager",
+      "group": "E-Manager",
+      "heating_circuit_index": null,
+      "index": 0,
+      "subindex": 1,
+      "datapoint": 2,
+      "data_type": "uint16",
+      "scale": 1.0,
+      "unit": "W",
+      "access": "rw",
+      "label_de": "Netzbezug",
+      "source_ref": "pdf:p5 §3.2",
+      "persistence_class": "cyclic",
+      "address": 102,
+      "register_count": 1
+    },
+    {
+      "description_de": "Stromaufnahme aller Wärmepumpen",
+      "range_min": null,
+      "range_max": null,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "emanager.1.power_consumption",
+      "module_id": "emanager",
+      "group": "E-Manager",
+      "heating_circuit_index": null,
+      "index": 0,
+      "subindex": 1,
+      "datapoint": 3,
+      "data_type": "int16",
+      "scale": 1.0,
+      "unit": "W",
+      "access": "r",
+      "label_de": "Stromaufnahme",
+      "source_ref": "pdf:p5 §3.2",
+      "persistence_class": "cyclic",
+      "address": 103,
+      "register_count": 1
+    },
+    {
+      "description_de": "Aufnahmeleistung-Sollwert als Summe für alle Wärmepumpen",
+      "range_min": null,
+      "range_max": null,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "emanager.1.power_setpoint",
+      "module_id": "emanager",
+      "group": "E-Manager",
+      "heating_circuit_index": null,
+      "index": 0,
+      "subindex": 1,
+      "datapoint": 4,
+      "data_type": "int16",
+      "scale": 1.0,
+      "unit": "W",
+      "access": "rw",
+      "label_de": "Aufnahmeleistung-Sollwert",
+      "source_ref": "pdf:p5 §3.2",
+      "persistence_class": "cyclic",
+      "address": 104,
+      "register_count": 1
+    },
+    {
+      "description_de": null,
+      "range_min": null,
+      "range_max": null,
+      "enum_values": [
+        {
+          "raw": 0,
+          "label_de": "Kein Fehler"
+        },
+        {
+          "raw": 1,
+          "label_de": "Meldung"
+        },
+        {
+          "raw": 2,
+          "label_de": "Warnung"
+        },
+        {
+          "raw": 3,
+          "label_de": "Fehler"
+        },
+        {
+          "raw": 4,
+          "label_de": "Störung"
+        }
+      ],
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "wp.0.error_state",
+      "module_id": "heatpump",
+      "group": "Wärmepumpe",
+      "heating_circuit_index": null,
+      "index": 1,
+      "subindex": 0,
+      "datapoint": 0,
+      "data_type": "uint16",
+      "scale": 1.0,
+      "unit": "Nr",
+      "access": "r",
+      "label_de": "Fehlerzustand",
+      "source_ref": "pdf:p6 §3.3",
+      "persistence_class": "cyclic",
+      "address": 1000,
+      "register_count": 1
+    },
+    {
+      "description_de": "Fehlernummer; mehrere Fehler werden abwechselnd übermittelt",
+      "range_min": null,
+      "range_max": null,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "wp.0.error_number",
+      "module_id": "heatpump",
+      "group": "Wärmepumpe",
+      "heating_circuit_index": null,
+      "index": 1,
+      "subindex": 0,
+      "datapoint": 1,
+      "data_type": "int16",
+      "scale": 1.0,
+      "unit": "Nr",
+      "access": "r",
+      "label_de": "Fehlernummer",
+      "source_ref": "pdf:p6 §3.3",
+      "persistence_class": "cyclic",
+      "address": 1001,
+      "register_count": 1
+    },
+    {
+      "description_de": null,
+      "range_min": null,
+      "range_max": null,
+      "enum_values": [
+        {
+          "raw": 0,
+          "label_de": "Initialisierung"
+        },
+        {
+          "raw": 1,
+          "label_de": "Referenzierung"
+        },
+        {
+          "raw": 2,
+          "label_de": "Sperrzeit"
+        },
+        {
+          "raw": 3,
+          "label_de": "Betriebsbereit"
+        },
+        {
+          "raw": 4,
+          "label_de": "Pumpenstart"
+        },
+        {
+          "raw": 5,
+          "label_de": "Verdichterstart"
+        },
+        {
+          "raw": 6,
+          "label_de": "Vorregelbetrieb"
+        },
+        {
+          "raw": 7,
+          "label_de": "Regelbetrieb"
+        },
+        {
+          "raw": 8,
+          "label_de": "Nicht definiert"
+        },
+        {
+          "raw": 9,
+          "label_de": "Kühlen"
+        },
+        {
+          "raw": 10,
+          "label_de": "Abtauung"
+        },
+        {
+          "raw": 20,
+          "label_de": "Stopp"
+        },
+        {
+          "raw": 30,
+          "label_de": "Störung"
+        },
+        {
+          "raw": 31,
+          "label_de": "Fehler"
+        },
+        {
+          "raw": 40,
+          "label_de": "Fehler-Reset"
+        }
+      ],
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "wp.0.hp_status",
+      "module_id": "heatpump",
+      "group": "Wärmepumpe",
+      "heating_circuit_index": null,
+      "index": 1,
+      "subindex": 0,
+      "datapoint": 2,
+      "data_type": "uint16",
+      "scale": 1.0,
+      "unit": "Nr",
+      "access": "r",
+      "label_de": "WP-Status",
+      "source_ref": "pdf:p6 §3.3",
+      "persistence_class": "cyclic",
+      "address": 1002,
+      "register_count": 1
+    },
+    {
+      "description_de": null,
+      "range_min": null,
+      "range_max": null,
+      "enum_values": [
+        {
+          "raw": 0,
+          "label_de": "Standby"
+        },
+        {
+          "raw": 1,
+          "label_de": "Heizen"
+        },
+        {
+          "raw": 2,
+          "label_de": "Brauchwasser"
+        },
+        {
+          "raw": 3,
+          "label_de": "Kühlen"
+        },
+        {
+          "raw": 4,
+          "label_de": "Zirkulieren"
+        },
+        {
+          "raw": 5,
+          "label_de": "Abtauung"
+        },
+        {
+          "raw": 6,
+          "label_de": "Aus"
+        },
+        {
+          "raw": 7,
+          "label_de": "Frostschutz"
+        },
+        {
+          "raw": 8,
+          "label_de": "Betriebsbereit Frostschutz"
+        },
+        {
+          "raw": 9,
+          "label_de": "Nicht definiert"
+        },
+        {
+          "raw": 10,
+          "label_de": "Sommerbetrieb"
+        },
+        {
+          "raw": 11,
+          "label_de": "Ferienbetrieb"
+        },
+        {
+          "raw": 12,
+          "label_de": "Fehler"
+        },
+        {
+          "raw": 13,
+          "label_de": "Warnung"
+        },
+        {
+          "raw": 14,
+          "label_de": "Meldung"
+        },
+        {
+          "raw": 15,
+          "label_de": "Sperrzeit"
+        },
+        {
+          "raw": 16,
+          "label_de": "EVU-Sperre"
+        },
+        {
+          "raw": 17,
+          "label_de": "Temperatur-Sperre"
+        },
+        {
+          "raw": 18,
+          "label_de": "Software-Update"
+        }
+      ],
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "wp.0.operating_state",
+      "module_id": "heatpump",
+      "group": "Wärmepumpe",
+      "heating_circuit_index": null,
+      "index": 1,
+      "subindex": 0,
+      "datapoint": 3,
+      "data_type": "uint16",
+      "scale": 1.0,
+      "unit": "Nr",
+      "access": "r",
+      "label_de": "Betriebszustand",
+      "source_ref": "pdf:p6 §3.3",
+      "persistence_class": "cyclic",
+      "address": 1003,
+      "register_count": 1
+    },
+    {
+      "description_de": null,
+      "range_min": null,
+      "range_max": null,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "wp.0.flow_temp",
+      "module_id": "heatpump",
+      "group": "Wärmepumpe",
+      "heating_circuit_index": null,
+      "index": 1,
+      "subindex": 0,
+      "datapoint": 4,
+      "data_type": "int16",
+      "scale": 0.01,
+      "unit": "°C",
+      "access": "r",
+      "label_de": "Vorlauftemperatur",
+      "source_ref": "pdf:p6 §3.3",
+      "persistence_class": "cyclic",
+      "address": 1004,
+      "register_count": 1
+    },
+    {
+      "description_de": null,
+      "range_min": null,
+      "range_max": null,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "wp.0.return_temp",
+      "module_id": "heatpump",
+      "group": "Wärmepumpe",
+      "heating_circuit_index": null,
+      "index": 1,
+      "subindex": 0,
+      "datapoint": 5,
+      "data_type": "int16",
+      "scale": 0.01,
+      "unit": "°C",
+      "access": "r",
+      "label_de": "Rücklauftemperatur",
+      "source_ref": "pdf:p7 §3.3",
+      "persistence_class": "cyclic",
+      "address": 1005,
+      "register_count": 1
+    },
+    {
+      "description_de": "Volumenstrom heizungswasserseitig",
+      "range_min": null,
+      "range_max": null,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "wp.0.vol_flow_sink",
+      "module_id": "heatpump",
+      "group": "Wärmepumpe",
+      "heating_circuit_index": null,
+      "index": 1,
+      "subindex": 0,
+      "datapoint": 6,
+      "data_type": "int16",
+      "scale": 0.01,
+      "unit": "l/h",
+      "access": "r",
+      "label_de": "Volumenstrom Abgabeseite",
+      "source_ref": "pdf:p7 §3.3",
+      "persistence_class": "cyclic",
+      "address": 1006,
+      "register_count": 1
+    },
+    {
+      "description_de": "Eintrittstemperatur Energiequelle",
+      "range_min": null,
+      "range_max": null,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "wp.0.source_temp_in",
+      "module_id": "heatpump",
+      "group": "Wärmepumpe",
+      "heating_circuit_index": null,
+      "index": 1,
+      "subindex": 0,
+      "datapoint": 7,
+      "data_type": "int16",
+      "scale": 0.01,
+      "unit": "°C",
+      "access": "r",
+      "label_de": "Temperatur Energiequelle-Eintritt",
+      "source_ref": "pdf:p7 §3.3",
+      "persistence_class": "cyclic",
+      "address": 1007,
+      "register_count": 1
+    },
+    {
+      "description_de": "Austrittstemperatur Energiequelle",
+      "range_min": null,
+      "range_max": null,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "wp.0.source_temp_out",
+      "module_id": "heatpump",
+      "group": "Wärmepumpe",
+      "heating_circuit_index": null,
+      "index": 1,
+      "subindex": 0,
+      "datapoint": 8,
+      "data_type": "int16",
+      "scale": 0.01,
+      "unit": "°C",
+      "access": "r",
+      "label_de": "Temperatur Energiequelle-Austritt",
+      "source_ref": "pdf:p7 §3.3",
+      "persistence_class": "cyclic",
+      "address": 1008,
+      "register_count": 1
+    },
+    {
+      "description_de": null,
+      "range_min": null,
+      "range_max": null,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "wp.0.vol_flow_source",
+      "module_id": "heatpump",
+      "group": "Wärmepumpe",
+      "heating_circuit_index": null,
+      "index": 1,
+      "subindex": 0,
+      "datapoint": 9,
+      "data_type": "int16",
+      "scale": 0.01,
+      "unit": "l/h",
+      "access": "r",
+      "label_de": "Volumenstrom Energiequelle",
+      "source_ref": "pdf:p7 §3.3",
+      "persistence_class": "cyclic",
+      "address": 1009,
+      "register_count": 1
+    },
+    {
+      "description_de": "Verdichterleistung in Prozent",
+      "range_min": null,
+      "range_max": null,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "wp.0.compressor_rating",
+      "module_id": "heatpump",
+      "group": "Wärmepumpe",
+      "heating_circuit_index": null,
+      "index": 1,
+      "subindex": 0,
+      "datapoint": 10,
+      "data_type": "uint16",
+      "scale": 0.01,
+      "unit": "%",
+      "access": "r",
+      "label_de": "Verdichter-Rating",
+      "source_ref": "pdf:p7 §3.3",
+      "persistence_class": "cyclic",
+      "address": 1010,
+      "register_count": 1
+    },
+    {
+      "description_de": "Abgabeleistung",
+      "range_min": null,
+      "range_max": null,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "wp.0.qp_heating",
+      "module_id": "heatpump",
+      "group": "Wärmepumpe",
+      "heating_circuit_index": null,
+      "index": 1,
+      "subindex": 0,
+      "datapoint": 11,
+      "data_type": "int16",
+      "scale": 0.1,
+      "unit": "kW",
+      "access": "r",
+      "label_de": "Qp Heizen",
+      "source_ref": "pdf:p7 §3.3",
+      "persistence_class": "cyclic",
+      "address": 1011,
+      "register_count": 1
+    },
+    {
+      "description_de": "Stromaufnahme, gemessen durch Frequenzumrichter",
+      "range_min": null,
+      "range_max": null,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "wp.0.fi_power",
+      "module_id": "heatpump",
+      "group": "Wärmepumpe",
+      "heating_circuit_index": null,
+      "index": 1,
+      "subindex": 0,
+      "datapoint": 12,
+      "data_type": "int16",
+      "scale": 1.0,
+      "unit": "W",
+      "access": "r",
+      "label_de": "Frequenzumrichter Stromaufnahme",
+      "source_ref": "pdf:p7 §3.3",
+      "persistence_class": "cyclic",
+      "address": 1012,
+      "register_count": 1
+    },
+    {
+      "description_de": "Aktueller Wirkungsgrad der Verdichteranlage",
+      "range_min": null,
+      "range_max": null,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "wp.0.efficiency",
+      "module_id": "heatpump",
+      "group": "Wärmepumpe",
+      "heating_circuit_index": null,
+      "index": 1,
+      "subindex": 0,
+      "datapoint": 13,
+      "data_type": "int16",
+      "scale": 1.0,
+      "unit": "—",
+      "access": "r",
+      "label_de": "Wirkungsgrad",
+      "source_ref": "pdf:p7 §3.3",
+      "persistence_class": "cyclic",
+      "address": 1013,
+      "register_count": 1
+    },
+    {
+      "description_de": "1 = Relais für E-Heizstab geschalten",
+      "range_min": null,
+      "range_max": null,
+      "enum_values": [
+        {
+          "raw": 0,
+          "label_de": "Aus"
+        },
+        {
+          "raw": 1,
+          "label_de": "Ein"
+        }
+      ],
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "wp.0.eheater_relay",
+      "module_id": "heatpump",
+      "group": "Wärmepumpe",
+      "heating_circuit_index": null,
+      "index": 1,
+      "subindex": 0,
+      "datapoint": 19,
+      "data_type": "int16",
+      "scale": 1.0,
+      "unit": "—",
+      "access": "r",
+      "label_de": "Zustand E-Heizstab",
+      "source_ref": "pdf:p7 §3.3",
+      "persistence_class": "cyclic",
+      "address": 1019,
+      "register_count": 1
+    },
+    {
+      "description_de": "Gesamte elektrische Energieaufnahme seit dem letzten Rücksetzen der Statistiken",
+      "range_min": null,
+      "range_max": null,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "wp.0.energy_electric",
+      "module_id": "heatpump",
+      "group": "Wärmepumpe",
+      "heating_circuit_index": null,
+      "index": 1,
+      "subindex": 0,
+      "datapoint": 20,
+      "data_type": "int32",
+      "scale": 1.0,
+      "unit": "Wh",
+      "access": "r",
+      "label_de": "Statistik VdA E",
+      "source_ref": "pdf:p7 §3.3",
+      "persistence_class": "cyclic",
+      "address": 1020,
+      "register_count": 2
+    },
+    {
+      "description_de": "Gesamte thermische Energieabgabe seit dem letzten Rücksetzen der Statistiken",
+      "range_min": null,
+      "range_max": null,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "wp.0.energy_thermal",
+      "module_id": "heatpump",
+      "group": "Wärmepumpe",
+      "heating_circuit_index": null,
+      "index": 1,
+      "subindex": 0,
+      "datapoint": 22,
+      "data_type": "int32",
+      "scale": 1.0,
+      "unit": "Wh",
+      "access": "r",
+      "label_de": "Statistik VdA Q",
+      "source_ref": "pdf:p7 §3.3",
+      "persistence_class": "cyclic",
+      "address": 1022,
+      "register_count": 2
+    },
+    {
+      "description_de": "Fehlercode; 0 = kein Fehler",
+      "range_min": null,
+      "range_max": null,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "dhw.0.error_number",
+      "module_id": "dhw",
+      "group": "Warmwasser",
+      "heating_circuit_index": null,
+      "index": 2,
+      "subindex": 0,
+      "datapoint": 0,
+      "data_type": "int16",
+      "scale": 1.0,
+      "unit": "Nr",
+      "access": "r",
+      "label_de": "Fehlernummer",
+      "source_ref": "pdf:p8 §3.4",
+      "persistence_class": "cyclic",
+      "address": 2000,
+      "register_count": 1
+    },
+    {
+      "description_de": null,
+      "range_min": null,
+      "range_max": null,
+      "enum_values": [
+        {
+          "raw": 0,
+          "label_de": "Standby"
+        },
+        {
+          "raw": 1,
+          "label_de": "Heizen"
+        },
+        {
+          "raw": 2,
+          "label_de": "Legionellenprogramm"
+        },
+        {
+          "raw": 3,
+          "label_de": "Sommerbetrieb"
+        },
+        {
+          "raw": 4,
+          "label_de": "Frostschutz"
+        },
+        {
+          "raw": 5,
+          "label_de": "Ferienbetrieb"
+        },
+        {
+          "raw": 6,
+          "label_de": "Betriebspause durch Vorrang"
+        },
+        {
+          "raw": 7,
+          "label_de": "Fehler"
+        },
+        {
+          "raw": 8,
+          "label_de": "Aus"
+        },
+        {
+          "raw": 9,
+          "label_de": "Erzwungene Brauchwasserbereitung"
+        },
+        {
+          "raw": 10,
+          "label_de": "Nachlaufzeit"
+        },
+        {
+          "raw": 11,
+          "label_de": "Temperatursperre"
+        },
+        {
+          "raw": 12,
+          "label_de": "Standby mit Frostschutz"
+        }
+      ],
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "dhw.0.operating_mode",
+      "module_id": "dhw",
+      "group": "Warmwasser",
+      "heating_circuit_index": null,
+      "index": 2,
+      "subindex": 0,
+      "datapoint": 1,
+      "data_type": "uint16",
+      "scale": 1.0,
+      "unit": "Nr",
+      "access": "r",
+      "label_de": "Betriebsmodus",
+      "source_ref": "pdf:p8 §3.4",
+      "persistence_class": "cyclic",
+      "address": 2001,
+      "register_count": 1
+    },
+    {
+      "description_de": "Obere Brauchwasserspeichertemperatur",
+      "range_min": null,
+      "range_max": null,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "dhw.0.temp_top",
+      "module_id": "dhw",
+      "group": "Warmwasser",
+      "heating_circuit_index": null,
+      "index": 2,
+      "subindex": 0,
+      "datapoint": 2,
+      "data_type": "int16",
+      "scale": 0.1,
+      "unit": "°C",
+      "access": "r",
+      "label_de": "Temperatur oben",
+      "source_ref": "pdf:p8 §3.4",
+      "persistence_class": "cyclic",
+      "address": 2002,
+      "register_count": 1
+    },
+    {
+      "description_de": "Untere Brauchwasserspeichertemperatur",
+      "range_min": null,
+      "range_max": null,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "dhw.0.temp_bottom",
+      "module_id": "dhw",
+      "group": "Warmwasser",
+      "heating_circuit_index": null,
+      "index": 2,
+      "subindex": 0,
+      "datapoint": 3,
+      "data_type": "int16",
+      "scale": 0.1,
+      "unit": "°C",
+      "access": "r",
+      "label_de": "Temperatur unten",
+      "source_ref": "pdf:p8 §3.4",
+      "persistence_class": "cyclic",
+      "address": 2003,
+      "register_count": 1
+    },
+    {
+      "description_de": "Aktueller Wert Zirkulationstemperaturfühler",
+      "range_min": null,
+      "range_max": null,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "dhw.0.temp_circulation",
+      "module_id": "dhw",
+      "group": "Warmwasser",
+      "heating_circuit_index": null,
+      "index": 2,
+      "subindex": 0,
+      "datapoint": 4,
+      "data_type": "int16",
+      "scale": 0.1,
+      "unit": "°C",
+      "access": "r",
+      "label_de": "Temperatur Zirkulation",
+      "source_ref": "pdf:p8 §3.4",
+      "persistence_class": "cyclic",
+      "address": 2004,
+      "register_count": 1
+    },
+    {
+      "description_de": "1 = Zirkulationspumpe aktiv",
+      "range_min": null,
+      "range_max": null,
+      "enum_values": [
+        {
+          "raw": 0,
+          "label_de": "Aus"
+        },
+        {
+          "raw": 1,
+          "label_de": "Ein"
+        }
+      ],
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "dhw.0.circulation_pump",
+      "module_id": "dhw",
+      "group": "Warmwasser",
+      "heating_circuit_index": null,
+      "index": 2,
+      "subindex": 0,
+      "datapoint": 5,
+      "data_type": "int16",
+      "scale": 1.0,
+      "unit": "—",
+      "access": "r",
+      "label_de": "Zustand Zirkulationspumpe",
+      "source_ref": "pdf:p8 §3.4",
+      "persistence_class": "cyclic",
+      "address": 2005,
+      "register_count": 1
+    },
+    {
+      "description_de": "Zieltemperatur des Brauchwasserspeichers",
+      "range_min": 25.0,
+      "range_max": 65.0,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "dhw.0.setpoint_temp",
+      "module_id": "dhw",
+      "group": "Warmwasser",
+      "heating_circuit_index": null,
+      "index": 2,
+      "subindex": 0,
+      "datapoint": 50,
+      "data_type": "int16",
+      "scale": 0.1,
+      "unit": "°C",
+      "access": "rw",
+      "label_de": "Brauchwasser-Solltemperatur",
+      "source_ref": "pdf:p8 §3.4",
+      "persistence_class": "retained",
+      "address": 2050,
+      "register_count": 1
+    },
+    {
+      "description_de": "Fehlercode; 0 = kein Fehler",
+      "range_min": null,
+      "range_max": null,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "buffer.0.error_number",
+      "module_id": "buffer",
+      "group": "Puffer",
+      "heating_circuit_index": null,
+      "index": 3,
+      "subindex": 0,
+      "datapoint": 0,
+      "data_type": "int16",
+      "scale": 1.0,
+      "unit": "Nr",
+      "access": "r",
+      "label_de": "Fehlernummer",
+      "source_ref": "pdf:p9 §3.5",
+      "persistence_class": "cyclic",
+      "address": 3000,
+      "register_count": 1
+    },
+    {
+      "description_de": null,
+      "range_min": null,
+      "range_max": null,
+      "enum_values": [
+        {
+          "raw": 0,
+          "label_de": "Standby"
+        },
+        {
+          "raw": 1,
+          "label_de": "Heizen"
+        },
+        {
+          "raw": 2,
+          "label_de": "Kühlen"
+        },
+        {
+          "raw": 3,
+          "label_de": "Sommerbetrieb"
+        },
+        {
+          "raw": 4,
+          "label_de": "Frostschutz"
+        },
+        {
+          "raw": 5,
+          "label_de": "Ferienbetrieb"
+        },
+        {
+          "raw": 6,
+          "label_de": "Betriebspause durch Vorrang"
+        },
+        {
+          "raw": 7,
+          "label_de": "Fehler"
+        },
+        {
+          "raw": 8,
+          "label_de": "Aus"
+        },
+        {
+          "raw": 9,
+          "label_de": "Standby mit Frostschutz"
+        }
+      ],
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "buffer.0.operating_mode",
+      "module_id": "buffer",
+      "group": "Puffer",
+      "heating_circuit_index": null,
+      "index": 3,
+      "subindex": 0,
+      "datapoint": 1,
+      "data_type": "uint16",
+      "scale": 1.0,
+      "unit": "Nr",
+      "access": "r",
+      "label_de": "Betriebsmodus",
+      "source_ref": "pdf:p9 §3.5",
+      "persistence_class": "cyclic",
+      "address": 3001,
+      "register_count": 1
+    },
+    {
+      "description_de": "Obere Puffertemperatur",
+      "range_min": null,
+      "range_max": null,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "buffer.0.temp_top",
+      "module_id": "buffer",
+      "group": "Puffer",
+      "heating_circuit_index": null,
+      "index": 3,
+      "subindex": 0,
+      "datapoint": 2,
+      "data_type": "int16",
+      "scale": 0.1,
+      "unit": "°C",
+      "access": "r",
+      "label_de": "Temperatur oben",
+      "source_ref": "pdf:p9 §3.5",
+      "persistence_class": "cyclic",
+      "address": 3002,
+      "register_count": 1
+    },
+    {
+      "description_de": "Untere Puffertemperatur",
+      "range_min": null,
+      "range_max": null,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "buffer.0.temp_bottom",
+      "module_id": "buffer",
+      "group": "Puffer",
+      "heating_circuit_index": null,
+      "index": 3,
+      "subindex": 0,
+      "datapoint": 3,
+      "data_type": "int16",
+      "scale": 0.1,
+      "unit": "°C",
+      "access": "r",
+      "label_de": "Temperatur unten",
+      "source_ref": "pdf:p9 §3.5",
+      "persistence_class": "cyclic",
+      "address": 3003,
+      "register_count": 1
+    },
+    {
+      "description_de": "Puffersolltemperatur zur Vorgabe über Modbus",
+      "range_min": 0.0,
+      "range_max": 90.0,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "buffer.0.modbus_temp_top",
+      "module_id": "buffer",
+      "group": "Puffer",
+      "heating_circuit_index": null,
+      "index": 3,
+      "subindex": 0,
+      "datapoint": 4,
+      "data_type": "int16",
+      "scale": 0.1,
+      "unit": "°C",
+      "access": "rw",
+      "label_de": "Modbus Puffertemperatur oben",
+      "source_ref": "pdf:p9 §3.5",
+      "persistence_class": "cyclic",
+      "address": 3004,
+      "register_count": 1
+    },
+    {
+      "description_de": null,
+      "range_min": null,
+      "range_max": null,
+      "enum_values": [
+        {
+          "raw": -1,
+          "label_de": "Ungültige Anforderung"
+        },
+        {
+          "raw": 0,
+          "label_de": "Keine Anforderung"
+        },
+        {
+          "raw": 1,
+          "label_de": "Zirkulieren"
+        },
+        {
+          "raw": 2,
+          "label_de": "Heizen"
+        },
+        {
+          "raw": 3,
+          "label_de": "Kühlen"
+        }
+      ],
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "buffer.0.request_type",
+      "module_id": "buffer",
+      "group": "Puffer",
+      "heating_circuit_index": null,
+      "index": 3,
+      "subindex": 0,
+      "datapoint": 5,
+      "data_type": "int16",
+      "scale": 1.0,
+      "unit": "—",
+      "access": "rw",
+      "label_de": "Anforderungstyp",
+      "source_ref": "pdf:p9 §3.5",
+      "persistence_class": "cyclic",
+      "address": 3005,
+      "register_count": 1
+    },
+    {
+      "description_de": "Soll-Vorlauftemperatur; Register 06–08 gemeinsam schreiben",
+      "range_min": null,
+      "range_max": null,
+      "enum_values": null,
+      "write_group_id": "buffer.request_temps",
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "buffer.0.request_flow_temp",
+      "module_id": "buffer",
+      "group": "Puffer",
+      "heating_circuit_index": null,
+      "index": 3,
+      "subindex": 0,
+      "datapoint": 6,
+      "data_type": "int16",
+      "scale": 0.1,
+      "unit": "°C",
+      "access": "rw",
+      "label_de": "Anforderung Vorlauftemperatur",
+      "source_ref": "pdf:p9 §3.5",
+      "persistence_class": "cyclic",
+      "address": 3006,
+      "register_count": 1
+    },
+    {
+      "description_de": "Soll-Rücklauftemperatur; Register 06–08 gemeinsam schreiben",
+      "range_min": null,
+      "range_max": null,
+      "enum_values": null,
+      "write_group_id": "buffer.request_temps",
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "buffer.0.request_return_temp",
+      "module_id": "buffer",
+      "group": "Puffer",
+      "heating_circuit_index": null,
+      "index": 3,
+      "subindex": 0,
+      "datapoint": 7,
+      "data_type": "int16",
+      "scale": 0.1,
+      "unit": "°C",
+      "access": "rw",
+      "label_de": "Anforderung Rücklauftemperatur",
+      "source_ref": "pdf:p9 §3.5",
+      "persistence_class": "cyclic",
+      "address": 3007,
+      "register_count": 1
+    },
+    {
+      "description_de": "Spreizung; Register 06–08 gemeinsam schreiben",
+      "range_min": null,
+      "range_max": null,
+      "enum_values": null,
+      "write_group_id": "buffer.request_temps",
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "buffer.0.request_spread",
+      "module_id": "buffer",
+      "group": "Puffer",
+      "heating_circuit_index": null,
+      "index": 3,
+      "subindex": 0,
+      "datapoint": 8,
+      "data_type": "int16",
+      "scale": 0.1,
+      "unit": "K",
+      "access": "rw",
+      "label_de": "Anforderung Spreizung",
+      "source_ref": "pdf:p9 §3.5",
+      "persistence_class": "cyclic",
+      "address": 3008,
+      "register_count": 1
+    },
+    {
+      "description_de": "Sollabgabeleistung; optional zusätzlich zu 06–08 (PDF §4.2)",
+      "range_min": null,
+      "range_max": null,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "buffer.0.request_power",
+      "module_id": "buffer",
+      "group": "Puffer",
+      "heating_circuit_index": null,
+      "index": 3,
+      "subindex": 0,
+      "datapoint": 9,
+      "data_type": "int16",
+      "scale": 0.1,
+      "unit": "kW",
+      "access": "rw",
+      "label_de": "Anforderung Abgabeleistung",
+      "source_ref": "pdf:p9 §3.5",
+      "persistence_class": "cyclic",
+      "address": 3009,
+      "register_count": 1
+    },
+    {
+      "description_de": "Maximaltemperatur des Pufferspeichers",
+      "range_min": 25.0,
+      "range_max": 65.0,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "buffer.0.max_temp",
+      "module_id": "buffer",
+      "group": "Puffer",
+      "heating_circuit_index": null,
+      "index": 3,
+      "subindex": 0,
+      "datapoint": 50,
+      "data_type": "int16",
+      "scale": 0.1,
+      "unit": "°C",
+      "access": "rw",
+      "label_de": "Puffer-Maximaltemperatur",
+      "source_ref": "pdf:p9 §3.5",
+      "persistence_class": "retained",
+      "address": 3050,
+      "register_count": 1
+    },
+    {
+      "description_de": "Fehlercode; 0 = kein Fehler",
+      "range_min": null,
+      "range_max": null,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "solar.0.error_number",
+      "module_id": "solar",
+      "group": "Solar",
+      "heating_circuit_index": null,
+      "index": 4,
+      "subindex": 0,
+      "datapoint": 0,
+      "data_type": "int16",
+      "scale": 1.0,
+      "unit": "Nr",
+      "access": "r",
+      "label_de": "Fehlernummer",
+      "source_ref": "pdf:p10 §3.6",
+      "persistence_class": "cyclic",
+      "address": 4000,
+      "register_count": 1
+    },
+    {
+      "description_de": null,
+      "range_min": null,
+      "range_max": null,
+      "enum_values": [
+        {
+          "raw": 0,
+          "label_de": "Standby"
+        },
+        {
+          "raw": 1,
+          "label_de": "Heizen"
+        },
+        {
+          "raw": 2,
+          "label_de": "Fehler"
+        },
+        {
+          "raw": 3,
+          "label_de": "Aus"
+        }
+      ],
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "solar.0.operating_mode",
+      "module_id": "solar",
+      "group": "Solar",
+      "heating_circuit_index": null,
+      "index": 4,
+      "subindex": 0,
+      "datapoint": 1,
+      "data_type": "uint16",
+      "scale": 1.0,
+      "unit": "Nr",
+      "access": "r",
+      "label_de": "Betriebsmodus",
+      "source_ref": "pdf:p10 §3.6",
+      "persistence_class": "cyclic",
+      "address": 4001,
+      "register_count": 1
+    },
+    {
+      "description_de": "Temperatur des Solarkollektors",
+      "range_min": null,
+      "range_max": null,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "solar.0.collector_temp",
+      "module_id": "solar",
+      "group": "Solar",
+      "heating_circuit_index": null,
+      "index": 4,
+      "subindex": 0,
+      "datapoint": 2,
+      "data_type": "int16",
+      "scale": 0.1,
+      "unit": "°C",
+      "access": "r",
+      "label_de": "Kollektortemperatur",
+      "source_ref": "pdf:p10 §3.6",
+      "persistence_class": "cyclic",
+      "address": 4002,
+      "register_count": 1
+    },
+    {
+      "description_de": "Temperatur des 1. Solarspeichers",
+      "range_min": null,
+      "range_max": null,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "solar.0.storage1_temp",
+      "module_id": "solar",
+      "group": "Solar",
+      "heating_circuit_index": null,
+      "index": 4,
+      "subindex": 0,
+      "datapoint": 3,
+      "data_type": "int16",
+      "scale": 0.1,
+      "unit": "°C",
+      "access": "r",
+      "label_de": "Temperatur Speicher 1",
+      "source_ref": "pdf:p10 §3.6",
+      "persistence_class": "cyclic",
+      "address": 4003,
+      "register_count": 1
+    },
+    {
+      "description_de": "Temperatur des 2. Solarspeichers",
+      "range_min": null,
+      "range_max": null,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "solar.0.storage2_temp",
+      "module_id": "solar",
+      "group": "Solar",
+      "heating_circuit_index": null,
+      "index": 4,
+      "subindex": 0,
+      "datapoint": 4,
+      "data_type": "int16",
+      "scale": 0.1,
+      "unit": "°C",
+      "access": "r",
+      "label_de": "Temperatur Speicher 2",
+      "source_ref": "pdf:p10 §3.6",
+      "persistence_class": "cyclic",
+      "address": 4004,
+      "register_count": 1
+    },
+    {
+      "description_de": "Zieltemperatur der Solarspeicher",
+      "range_min": 25.0,
+      "range_max": 90.0,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "solar.0.max_storage_temp",
+      "module_id": "solar",
+      "group": "Solar",
+      "heating_circuit_index": null,
+      "index": 4,
+      "subindex": 0,
+      "datapoint": 50,
+      "data_type": "int16",
+      "scale": 0.1,
+      "unit": "°C",
+      "access": "rw",
+      "label_de": "Maximale Speichertemperatur",
+      "source_ref": "pdf:p10 §3.6",
+      "persistence_class": "retained",
+      "address": 4050,
+      "register_count": 1
+    },
+    {
+      "description_de": "Temperatur zur Umschaltung zu Speicher 2",
+      "range_min": 25.0,
+      "range_max": 90.0,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "solar.0.storage_switch_temp",
+      "module_id": "solar",
+      "group": "Solar",
+      "heating_circuit_index": null,
+      "index": 4,
+      "subindex": 0,
+      "datapoint": 51,
+      "data_type": "int16",
+      "scale": 0.1,
+      "unit": "°C",
+      "access": "rw",
+      "label_de": "Speicher Umschalttemperatur",
+      "source_ref": "pdf:p10 §3.6",
+      "persistence_class": "retained",
+      "address": 4051,
+      "register_count": 1
+    },
+    {
+      "description_de": "Fehlercode; 0 = kein Fehler",
+      "range_min": null,
+      "range_max": null,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "hk.1.error_number",
+      "module_id": "heating_circuit",
+      "group": "Heizkreis 1",
+      "heating_circuit_index": 1,
+      "index": 5,
+      "subindex": 0,
+      "datapoint": 0,
+      "data_type": "int16",
+      "scale": 1.0,
+      "unit": "Nr",
+      "access": "r",
+      "label_de": "Fehlernummer",
+      "source_ref": "pdf:p11 §3.7",
+      "persistence_class": "cyclic",
+      "address": 5000,
+      "register_count": 1
+    },
+    {
+      "description_de": "Aktueller Betriebszustand des Heizkreises",
+      "range_min": null,
+      "range_max": null,
+      "enum_values": [
+        {
+          "raw": 0,
+          "label_de": "Heizen"
+        },
+        {
+          "raw": 1,
+          "label_de": "Heizen abgesenkt"
+        },
+        {
+          "raw": 2,
+          "label_de": "Kühlen"
+        },
+        {
+          "raw": 3,
+          "label_de": "Estrichausheizprogramm"
+        },
+        {
+          "raw": 4,
+          "label_de": "Frostschutz"
+        },
+        {
+          "raw": 5,
+          "label_de": "Störung Übertemperatur"
+        },
+        {
+          "raw": 6,
+          "label_de": "Fehler"
+        },
+        {
+          "raw": 7,
+          "label_de": "Wartung"
+        },
+        {
+          "raw": 8,
+          "label_de": "Ferienbetrieb"
+        },
+        {
+          "raw": 9,
+          "label_de": "Sommerbetrieb"
+        },
+        {
+          "raw": 10,
+          "label_de": "Winterbetrieb (bei reinem Kühlkreis)"
+        },
+        {
+          "raw": 11,
+          "label_de": "Betriebspause durch Vorrang"
+        },
+        {
+          "raw": 12,
+          "label_de": "Aus"
+        },
+        {
+          "raw": 13,
+          "label_de": "Keine Freigabe"
+        },
+        {
+          "raw": 14,
+          "label_de": "Deaktiviert aufgrund Zeitplan"
+        },
+        {
+          "raw": 15,
+          "label_de": "Standby"
+        },
+        {
+          "raw": 16,
+          "label_de": "Standby Heizen"
+        },
+        {
+          "raw": 17,
+          "label_de": "Standby Absenkbetrieb"
+        },
+        {
+          "raw": 18,
+          "label_de": "Standby Kühlbetrieb"
+        },
+        {
+          "raw": 19,
+          "label_de": "Standby Frostschutz"
+        },
+        {
+          "raw": 20,
+          "label_de": "Standby Estrichausheizprogramm"
+        }
+      ],
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "hk.1.operating_state",
+      "module_id": "heating_circuit",
+      "group": "Heizkreis 1",
+      "heating_circuit_index": 1,
+      "index": 5,
+      "subindex": 0,
+      "datapoint": 1,
+      "data_type": "uint16",
+      "scale": 1.0,
+      "unit": "Nr",
+      "access": "r",
+      "label_de": "Betriebsmodus",
+      "source_ref": "pdf:p11 §3.7",
+      "persistence_class": "cyclic",
+      "address": 5001,
+      "register_count": 1
+    },
+    {
+      "description_de": "Heizkreis-Vorlauftemperatur",
+      "range_min": null,
+      "range_max": null,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "hk.1.flow_temp",
+      "module_id": "heating_circuit",
+      "group": "Heizkreis 1",
+      "heating_circuit_index": 1,
+      "index": 5,
+      "subindex": 0,
+      "datapoint": 2,
+      "data_type": "int16",
+      "scale": 0.1,
+      "unit": "°C",
+      "access": "r",
+      "label_de": "Vorlauftemperatur",
+      "source_ref": "pdf:p11 §3.7",
+      "persistence_class": "cyclic",
+      "address": 5002,
+      "register_count": 1
+    },
+    {
+      "description_de": "Heizkreis-Rücklauftemperatur",
+      "range_min": null,
+      "range_max": null,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "hk.1.return_temp",
+      "module_id": "heating_circuit",
+      "group": "Heizkreis 1",
+      "heating_circuit_index": 1,
+      "index": 5,
+      "subindex": 0,
+      "datapoint": 3,
+      "data_type": "int16",
+      "scale": 0.1,
+      "unit": "°C",
+      "access": "r",
+      "label_de": "Rücklauftemperatur",
+      "source_ref": "pdf:p11 §3.7",
+      "persistence_class": "cyclic",
+      "address": 5003,
+      "register_count": 1
+    },
+    {
+      "description_de": null,
+      "range_min": -29.9,
+      "range_max": 99.9,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "hk.1.room_temp",
+      "module_id": "heating_circuit",
+      "group": "Heizkreis 1",
+      "heating_circuit_index": 1,
+      "index": 5,
+      "subindex": 0,
+      "datapoint": 4,
+      "data_type": "int16",
+      "scale": 0.1,
+      "unit": "°C",
+      "access": "rw",
+      "label_de": "Raumtemperatur",
+      "source_ref": "pdf:p11 §3.7",
+      "persistence_class": "cyclic",
+      "address": 5004,
+      "register_count": 1
+    },
+    {
+      "description_de": "Sollwertvorgabe der Vorlauftemperatur über Modbus",
+      "range_min": 7.0,
+      "range_max": 65.0,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "hk.1.flow_setpoint",
+      "module_id": "heating_circuit",
+      "group": "Heizkreis 1",
+      "heating_circuit_index": 1,
+      "index": 5,
+      "subindex": 0,
+      "datapoint": 5,
+      "data_type": "int16",
+      "scale": 0.1,
+      "unit": "°C",
+      "access": "rw",
+      "label_de": "Sollwert Vorlauftemperatur",
+      "source_ref": "pdf:p11 §3.7",
+      "persistence_class": "cyclic",
+      "address": 5005,
+      "register_count": 1
+    },
+    {
+      "description_de": null,
+      "range_min": null,
+      "range_max": null,
+      "enum_values": [
+        {
+          "raw": 0,
+          "label_de": "Aus"
+        },
+        {
+          "raw": 1,
+          "label_de": "Manuell"
+        },
+        {
+          "raw": 2,
+          "label_de": "Automatik"
+        },
+        {
+          "raw": 3,
+          "label_de": "Automatik Heizen"
+        },
+        {
+          "raw": 4,
+          "label_de": "Automatik Kühlen"
+        },
+        {
+          "raw": 5,
+          "label_de": "Frostschutz"
+        },
+        {
+          "raw": 6,
+          "label_de": "Sommerbetrieb"
+        },
+        {
+          "raw": 7,
+          "label_de": "Estrichprogramm"
+        }
+      ],
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "hk.1.operating_mode",
+      "module_id": "heating_circuit",
+      "group": "Heizkreis 1",
+      "heating_circuit_index": 1,
+      "index": 5,
+      "subindex": 0,
+      "datapoint": 6,
+      "data_type": "int16",
+      "scale": 1.0,
+      "unit": "Nr",
+      "access": "rw",
+      "label_de": "Betriebsmodus (Soll)",
+      "source_ref": "pdf:p12 §3.7",
+      "persistence_class": "cyclic",
+      "address": 5006,
+      "register_count": 1
+    },
+    {
+      "description_de": "Berechnete Vorlauftemperatur nach Heizkurve",
+      "range_min": null,
+      "range_max": null,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "hk.1.flow_setpoint_calculated",
+      "module_id": "heating_circuit",
+      "group": "Heizkreis 1",
+      "heating_circuit_index": 1,
+      "index": 5,
+      "subindex": 0,
+      "datapoint": 7,
+      "data_type": "int16",
+      "scale": 0.1,
+      "unit": "°C",
+      "access": "r",
+      "label_de": "Soll-Vorlauftemperatur",
+      "source_ref": "pdf:p12 §3.7",
+      "persistence_class": "cyclic",
+      "address": 5007,
+      "register_count": 1
+    },
+    {
+      "description_de": "Offset zur berechneten Heizkurve",
+      "range_min": -10.0,
+      "range_max": 10.0,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "hk.1.setpoint_offset",
+      "module_id": "heating_circuit",
+      "group": "Heizkreis 1",
+      "heating_circuit_index": 1,
+      "index": 5,
+      "subindex": 0,
+      "datapoint": 50,
+      "data_type": "int16",
+      "scale": 0.1,
+      "unit": "°C",
+      "access": "rw",
+      "label_de": "Solltemperatur Offset",
+      "source_ref": "pdf:p12 §3.7",
+      "persistence_class": "retained",
+      "address": 5050,
+      "register_count": 1
+    },
+    {
+      "description_de": null,
+      "range_min": 15.0,
+      "range_max": 40.0,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "hk.1.room_setpoint_heat",
+      "module_id": "heating_circuit",
+      "group": "Heizkreis 1",
+      "heating_circuit_index": 1,
+      "index": 5,
+      "subindex": 0,
+      "datapoint": 51,
+      "data_type": "int16",
+      "scale": 0.1,
+      "unit": "°C",
+      "access": "rw",
+      "label_de": "Raumsolltemperatur Heizbetrieb",
+      "source_ref": "pdf:p12 §3.7",
+      "persistence_class": "retained",
+      "address": 5051,
+      "register_count": 1
+    },
+    {
+      "description_de": null,
+      "range_min": 15.0,
+      "range_max": 40.0,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "hk.1.room_setpoint_cool",
+      "module_id": "heating_circuit",
+      "group": "Heizkreis 1",
+      "heating_circuit_index": 1,
+      "index": 5,
+      "subindex": 0,
+      "datapoint": 52,
+      "data_type": "int16",
+      "scale": 0.1,
+      "unit": "°C",
+      "access": "rw",
+      "label_de": "Raumsolltemperatur Kühlbetrieb",
+      "source_ref": "pdf:p12 §3.7",
+      "persistence_class": "retained",
+      "address": 5052,
+      "register_count": 1
+    },
+    {
+      "description_de": "Fehlercode; 0 = kein Fehler",
+      "range_min": null,
+      "range_max": null,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "hk.2.error_number",
+      "module_id": "heating_circuit",
+      "group": "Heizkreis 2",
+      "heating_circuit_index": 2,
+      "index": 5,
+      "subindex": 1,
+      "datapoint": 0,
+      "data_type": "int16",
+      "scale": 1.0,
+      "unit": "Nr",
+      "access": "r",
+      "label_de": "Fehlernummer",
+      "source_ref": "pdf:p11 §3.7",
+      "persistence_class": "cyclic",
+      "address": 5100,
+      "register_count": 1
+    },
+    {
+      "description_de": "Aktueller Betriebszustand des Heizkreises",
+      "range_min": null,
+      "range_max": null,
+      "enum_values": [
+        {
+          "raw": 0,
+          "label_de": "Heizen"
+        },
+        {
+          "raw": 1,
+          "label_de": "Heizen abgesenkt"
+        },
+        {
+          "raw": 2,
+          "label_de": "Kühlen"
+        },
+        {
+          "raw": 3,
+          "label_de": "Estrichausheizprogramm"
+        },
+        {
+          "raw": 4,
+          "label_de": "Frostschutz"
+        },
+        {
+          "raw": 5,
+          "label_de": "Störung Übertemperatur"
+        },
+        {
+          "raw": 6,
+          "label_de": "Fehler"
+        },
+        {
+          "raw": 7,
+          "label_de": "Wartung"
+        },
+        {
+          "raw": 8,
+          "label_de": "Ferienbetrieb"
+        },
+        {
+          "raw": 9,
+          "label_de": "Sommerbetrieb"
+        },
+        {
+          "raw": 10,
+          "label_de": "Winterbetrieb (bei reinem Kühlkreis)"
+        },
+        {
+          "raw": 11,
+          "label_de": "Betriebspause durch Vorrang"
+        },
+        {
+          "raw": 12,
+          "label_de": "Aus"
+        },
+        {
+          "raw": 13,
+          "label_de": "Keine Freigabe"
+        },
+        {
+          "raw": 14,
+          "label_de": "Deaktiviert aufgrund Zeitplan"
+        },
+        {
+          "raw": 15,
+          "label_de": "Standby"
+        },
+        {
+          "raw": 16,
+          "label_de": "Standby Heizen"
+        },
+        {
+          "raw": 17,
+          "label_de": "Standby Absenkbetrieb"
+        },
+        {
+          "raw": 18,
+          "label_de": "Standby Kühlbetrieb"
+        },
+        {
+          "raw": 19,
+          "label_de": "Standby Frostschutz"
+        },
+        {
+          "raw": 20,
+          "label_de": "Standby Estrichausheizprogramm"
+        }
+      ],
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "hk.2.operating_state",
+      "module_id": "heating_circuit",
+      "group": "Heizkreis 2",
+      "heating_circuit_index": 2,
+      "index": 5,
+      "subindex": 1,
+      "datapoint": 1,
+      "data_type": "uint16",
+      "scale": 1.0,
+      "unit": "Nr",
+      "access": "r",
+      "label_de": "Betriebsmodus",
+      "source_ref": "pdf:p11 §3.7",
+      "persistence_class": "cyclic",
+      "address": 5101,
+      "register_count": 1
+    },
+    {
+      "description_de": "Heizkreis-Vorlauftemperatur",
+      "range_min": null,
+      "range_max": null,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "hk.2.flow_temp",
+      "module_id": "heating_circuit",
+      "group": "Heizkreis 2",
+      "heating_circuit_index": 2,
+      "index": 5,
+      "subindex": 1,
+      "datapoint": 2,
+      "data_type": "int16",
+      "scale": 0.1,
+      "unit": "°C",
+      "access": "r",
+      "label_de": "Vorlauftemperatur",
+      "source_ref": "pdf:p11 §3.7",
+      "persistence_class": "cyclic",
+      "address": 5102,
+      "register_count": 1
+    },
+    {
+      "description_de": "Heizkreis-Rücklauftemperatur",
+      "range_min": null,
+      "range_max": null,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "hk.2.return_temp",
+      "module_id": "heating_circuit",
+      "group": "Heizkreis 2",
+      "heating_circuit_index": 2,
+      "index": 5,
+      "subindex": 1,
+      "datapoint": 3,
+      "data_type": "int16",
+      "scale": 0.1,
+      "unit": "°C",
+      "access": "r",
+      "label_de": "Rücklauftemperatur",
+      "source_ref": "pdf:p11 §3.7",
+      "persistence_class": "cyclic",
+      "address": 5103,
+      "register_count": 1
+    },
+    {
+      "description_de": null,
+      "range_min": -29.9,
+      "range_max": 99.9,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "hk.2.room_temp",
+      "module_id": "heating_circuit",
+      "group": "Heizkreis 2",
+      "heating_circuit_index": 2,
+      "index": 5,
+      "subindex": 1,
+      "datapoint": 4,
+      "data_type": "int16",
+      "scale": 0.1,
+      "unit": "°C",
+      "access": "rw",
+      "label_de": "Raumtemperatur",
+      "source_ref": "pdf:p11 §3.7",
+      "persistence_class": "cyclic",
+      "address": 5104,
+      "register_count": 1
+    },
+    {
+      "description_de": "Sollwertvorgabe der Vorlauftemperatur über Modbus",
+      "range_min": 7.0,
+      "range_max": 65.0,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "hk.2.flow_setpoint",
+      "module_id": "heating_circuit",
+      "group": "Heizkreis 2",
+      "heating_circuit_index": 2,
+      "index": 5,
+      "subindex": 1,
+      "datapoint": 5,
+      "data_type": "int16",
+      "scale": 0.1,
+      "unit": "°C",
+      "access": "rw",
+      "label_de": "Sollwert Vorlauftemperatur",
+      "source_ref": "pdf:p11 §3.7",
+      "persistence_class": "cyclic",
+      "address": 5105,
+      "register_count": 1
+    },
+    {
+      "description_de": null,
+      "range_min": null,
+      "range_max": null,
+      "enum_values": [
+        {
+          "raw": 0,
+          "label_de": "Aus"
+        },
+        {
+          "raw": 1,
+          "label_de": "Manuell"
+        },
+        {
+          "raw": 2,
+          "label_de": "Automatik"
+        },
+        {
+          "raw": 3,
+          "label_de": "Automatik Heizen"
+        },
+        {
+          "raw": 4,
+          "label_de": "Automatik Kühlen"
+        },
+        {
+          "raw": 5,
+          "label_de": "Frostschutz"
+        },
+        {
+          "raw": 6,
+          "label_de": "Sommerbetrieb"
+        },
+        {
+          "raw": 7,
+          "label_de": "Estrichprogramm"
+        }
+      ],
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "hk.2.operating_mode",
+      "module_id": "heating_circuit",
+      "group": "Heizkreis 2",
+      "heating_circuit_index": 2,
+      "index": 5,
+      "subindex": 1,
+      "datapoint": 6,
+      "data_type": "int16",
+      "scale": 1.0,
+      "unit": "Nr",
+      "access": "rw",
+      "label_de": "Betriebsmodus (Soll)",
+      "source_ref": "pdf:p12 §3.7",
+      "persistence_class": "cyclic",
+      "address": 5106,
+      "register_count": 1
+    },
+    {
+      "description_de": "Berechnete Vorlauftemperatur nach Heizkurve",
+      "range_min": null,
+      "range_max": null,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "hk.2.flow_setpoint_calculated",
+      "module_id": "heating_circuit",
+      "group": "Heizkreis 2",
+      "heating_circuit_index": 2,
+      "index": 5,
+      "subindex": 1,
+      "datapoint": 7,
+      "data_type": "int16",
+      "scale": 0.1,
+      "unit": "°C",
+      "access": "r",
+      "label_de": "Soll-Vorlauftemperatur",
+      "source_ref": "pdf:p12 §3.7",
+      "persistence_class": "cyclic",
+      "address": 5107,
+      "register_count": 1
+    },
+    {
+      "description_de": "Offset zur berechneten Heizkurve",
+      "range_min": -10.0,
+      "range_max": 10.0,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "hk.2.setpoint_offset",
+      "module_id": "heating_circuit",
+      "group": "Heizkreis 2",
+      "heating_circuit_index": 2,
+      "index": 5,
+      "subindex": 1,
+      "datapoint": 50,
+      "data_type": "int16",
+      "scale": 0.1,
+      "unit": "°C",
+      "access": "rw",
+      "label_de": "Solltemperatur Offset",
+      "source_ref": "pdf:p12 §3.7",
+      "persistence_class": "retained",
+      "address": 5150,
+      "register_count": 1
+    },
+    {
+      "description_de": null,
+      "range_min": 15.0,
+      "range_max": 40.0,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "hk.2.room_setpoint_heat",
+      "module_id": "heating_circuit",
+      "group": "Heizkreis 2",
+      "heating_circuit_index": 2,
+      "index": 5,
+      "subindex": 1,
+      "datapoint": 51,
+      "data_type": "int16",
+      "scale": 0.1,
+      "unit": "°C",
+      "access": "rw",
+      "label_de": "Raumsolltemperatur Heizbetrieb",
+      "source_ref": "pdf:p12 §3.7",
+      "persistence_class": "retained",
+      "address": 5151,
+      "register_count": 1
+    },
+    {
+      "description_de": null,
+      "range_min": 15.0,
+      "range_max": 40.0,
+      "enum_values": null,
+      "write_group_id": null,
+      "byte_order": "big_endian_high_word_first",
+      "param_id": "hk.2.room_setpoint_cool",
+      "module_id": "heating_circuit",
+      "group": "Heizkreis 2",
+      "heating_circuit_index": 2,
+      "index": 5,
+      "subindex": 1,
+      "datapoint": 52,
+      "data_type": "int16",
+      "scale": 0.1,
+      "unit": "°C",
+      "access": "rw",
+      "label_de": "Raumsolltemperatur Kühlbetrieb",
+      "source_ref": "pdf:p12 §3.7",
+      "persistence_class": "retained",
+      "address": 5152,
+      "register_count": 1
+    }
+  ]
+}

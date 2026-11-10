@@ -4,6 +4,8 @@
 //! - Manual [`PollScheduler::read_all`] / [`PollScheduler::read_group`] independent of timer.
 //! - Paused while disconnected / error — no Modbus reads until reconnect.
 //! - Partial block failures mark affected params `Error`; successful peers stay `Good`.
+//! - Illegal Data Address (`0x02`) on a multi-param block falls back to per-parameter
+//!   reads (plant may omit mid-span regs such as DHW circulation / HK calculated setpoint).
 //! - Drive with [`PollScheduler::tick`] and an injectable [`Clock`] (use [`FakeClock`] in tests).
 
 use std::collections::{HashMap, VecDeque};
@@ -229,61 +231,51 @@ impl<T: ModbusTransport, C: Clock> PollScheduler<T, C> {
         let mut updates: Vec<PollUpdate> = Vec::new();
 
         for block in &blocks {
-            match self
-                .transport
-                .read_holding(self.config.unit_id, block.start, block.count)
-            {
-                Ok(words) => match decode_block(self.catalog, block, &words) {
-                    Ok(decoded) => {
-                        for item in decoded {
-                            ok_count = ok_count.saturating_add(1);
-                            updates.push(PollUpdate::Ok(item));
-                        }
+            match self.read_block_with_fallback(block) {
+                BlockReadOutcome::Ok(decoded) => {
+                    for item in decoded {
+                        ok_count = ok_count.saturating_add(1);
+                        updates.push(PollUpdate::Ok(item));
                     }
-                    Err(message) => {
-                        for param_id in &block.param_ids {
-                            err_count = err_count.saturating_add(1);
-                            updates.push(PollUpdate::Err {
-                                param_id: param_id.clone(),
-                                message: message.clone(),
-                            });
-                        }
+                }
+                BlockReadOutcome::Partial { ok, err } => {
+                    for item in ok {
+                        ok_count = ok_count.saturating_add(1);
+                        updates.push(PollUpdate::Ok(item));
                     }
-                },
-                Err(err) => {
-                    // Connection drop: pause further polling this cycle.
-                    if matches!(
-                        err,
-                        ModbusError::ConnectionClosed | ModbusError::NotConnected
-                    ) {
-                        for param_id in &block.param_ids {
-                            err_count = err_count.saturating_add(1);
-                            updates.push(PollUpdate::Err {
-                                param_id: param_id.clone(),
-                                message: err.to_string(),
-                            });
-                        }
-                        // Apply what we have, then mark offline.
-                        self.apply_updates(updates);
-                        self.push_event(Event::PollCompleted {
-                            ok_count,
-                            err_count,
-                        });
-                        self.next_poll_at = None;
-                        self.transport.disconnect();
-                        self.mark_all_stale();
-                        self.set_status(ConnectionStatus::Error {
-                            message: err.to_string(),
-                        });
-                        return;
+                    for (param_id, message) in err {
+                        err_count = err_count.saturating_add(1);
+                        updates.push(PollUpdate::Err { param_id, message });
                     }
+                }
+                BlockReadOutcome::AllErr { message } => {
                     for param_id in &block.param_ids {
                         err_count = err_count.saturating_add(1);
                         updates.push(PollUpdate::Err {
                             param_id: param_id.clone(),
-                            message: err.to_string(),
+                            message: message.clone(),
                         });
                     }
+                }
+                BlockReadOutcome::ConnectionLost { message } => {
+                    for param_id in &block.param_ids {
+                        err_count = err_count.saturating_add(1);
+                        updates.push(PollUpdate::Err {
+                            param_id: param_id.clone(),
+                            message: message.clone(),
+                        });
+                    }
+                    // Apply what we have, then mark offline.
+                    self.apply_updates(updates);
+                    self.push_event(Event::PollCompleted {
+                        ok_count,
+                        err_count,
+                    });
+                    self.next_poll_at = None;
+                    self.transport.disconnect();
+                    self.mark_all_stale();
+                    self.set_status(ConnectionStatus::Error { message });
+                    return;
                 }
             }
         }
@@ -304,6 +296,100 @@ impl<T: ModbusTransport, C: Clock> PollScheduler<T, C> {
             self.next_poll_at = Some(self.clock.now() + self.config.poll_interval);
         } else {
             self.next_poll_at = None;
+        }
+    }
+
+    /// Read one planned block. On illegal-address (0x02) for multi-param blocks,
+    /// fall back to per-parameter reads so one missing plant register cannot mark
+    /// the whole Warmwasser / Heizkreis span as `Error`.
+    fn read_block_with_fallback(&mut self, block: &ReadBlock) -> BlockReadOutcome {
+        match self
+            .transport
+            .read_holding(self.config.unit_id, block.start, block.count)
+        {
+            Ok(words) => match decode_block(self.catalog, block, &words) {
+                Ok(decoded) => BlockReadOutcome::Ok(decoded),
+                Err(message) => BlockReadOutcome::AllErr { message },
+            },
+            Err(err) => {
+                if matches!(
+                    err,
+                    ModbusError::ConnectionClosed | ModbusError::NotConnected
+                ) {
+                    return BlockReadOutcome::ConnectionLost {
+                        message: err.to_string(),
+                    };
+                }
+
+                let illegal = matches!(
+                    err,
+                    ModbusError::ModbusException {
+                        code: ILLEGAL_DATA_ADDRESS
+                    }
+                );
+                if illegal && block.param_ids.len() > 1 {
+                    return self.read_block_per_parameter(block);
+                }
+
+                BlockReadOutcome::AllErr {
+                    message: err.to_string(),
+                }
+            }
+        }
+    }
+
+    fn read_block_per_parameter(&mut self, block: &ReadBlock) -> BlockReadOutcome {
+        let mut ok = Vec::new();
+        let mut err = Vec::new();
+        let mut ids = block.param_ids.iter();
+
+        while let Some(param_id) = ids.next() {
+            let Some(param) = self.catalog.get(param_id) else {
+                err.push((
+                    param_id.clone(),
+                    format!("Parameter nicht im Katalog: {param_id}"),
+                ));
+                continue;
+            };
+
+            match self.transport.read_holding(
+                self.config.unit_id,
+                param.address,
+                u16::from(param.register_count),
+            ) {
+                Ok(words) => match decode_param(param, &words) {
+                    Ok(decoded) => ok.push(decoded),
+                    Err(message) => err.push((param_id.clone(), message)),
+                },
+                Err(e)
+                    if matches!(
+                        e,
+                        ModbusError::ConnectionClosed | ModbusError::NotConnected
+                    ) =>
+                {
+                    let message = e.to_string();
+                    err.push((param_id.clone(), message.clone()));
+                    for rest in ids {
+                        err.push((rest.clone(), message.clone()));
+                    }
+                    if ok.is_empty() {
+                        return BlockReadOutcome::ConnectionLost { message };
+                    }
+                    return BlockReadOutcome::Partial { ok, err };
+                }
+                Err(e) => err.push((param_id.clone(), e.to_string())),
+            }
+        }
+
+        if ok.is_empty() {
+            BlockReadOutcome::AllErr {
+                message: err
+                    .first()
+                    .map(|(_, m)| m.clone())
+                    .unwrap_or_else(|| "Lesefehler".into()),
+            }
+        } else {
+            BlockReadOutcome::Partial { ok, err }
         }
     }
 
@@ -352,9 +438,26 @@ impl<T: ModbusTransport, C: Clock> PollScheduler<T, C> {
     }
 }
 
+/// Modbus exception: Illegal Data Address (FC03 span includes unsupported regs).
+const ILLEGAL_DATA_ADDRESS: u8 = 0x02;
+
 enum PollUpdate {
     Ok(DecodedParam),
     Err { param_id: String, message: String },
+}
+
+enum BlockReadOutcome {
+    Ok(Vec<DecodedParam>),
+    Partial {
+        ok: Vec<DecodedParam>,
+        err: Vec<(String, String)>,
+    },
+    AllErr {
+        message: String,
+    },
+    ConnectionLost {
+        message: String,
+    },
 }
 
 struct DecodedParam {
@@ -548,6 +651,84 @@ mod tests {
         // Manual re-armed from "now"; advancing ≪ 5s must not tick.
         clock.advance(Duration::from_millis(50));
         assert!(!sched.tick());
+    }
+
+    #[test]
+    fn illegal_address_mid_span_falls_back_per_param() {
+        // Live EU13L often rejects DHW 2004/2005 and HK calculated setpoint 5007/5107
+        // inside an otherwise-valid contiguous FC03 span. Neighbors must stay Good.
+        let (mut sched, _clock) = test_scheduler(Duration::from_millis(50));
+        sched.connect("mock", 502).unwrap();
+        let _ = sched.drain_events();
+
+        sched
+            .transport_mut()
+            .inject_fault(InjectedFault::AddressRange {
+                start: 2004,
+                count: 2,
+                code: 0x02,
+            });
+        // Sticky AddressRange only fails overlapping ops; also poison HK calculated setpoints.
+        // Use a second sticky fault by chaining: after first poll clears nothing (sticky),
+        // we need both ranges. AddressRange is a single range — run two group polls instead.
+
+        assert!(sched.read_group("Warmwasser"));
+        assert_eq!(
+            sched.get_value("dhw.0.temp_top").map(|v| v.quality),
+            Some(ValueQuality::Good),
+            "readable DHW peers must survive illegal mid-span address"
+        );
+        assert_eq!(
+            sched.get_value("dhw.0.temp_bottom").map(|v| v.quality),
+            Some(ValueQuality::Good)
+        );
+        assert_eq!(
+            sched
+                .get_value("dhw.0.temp_circulation")
+                .map(|v| v.quality),
+            Some(ValueQuality::Error)
+        );
+        assert_eq!(
+            sched
+                .get_value("dhw.0.circulation_pump")
+                .map(|v| v.quality),
+            Some(ValueQuality::Error)
+        );
+        assert_eq!(
+            sched.get_value("dhw.0.setpoint_temp").map(|v| v.quality),
+            Some(ValueQuality::Good),
+            "retained DHW setpoint is a separate block"
+        );
+
+        sched.transport_mut().clear_fault();
+        sched
+            .transport_mut()
+            .inject_fault(InjectedFault::AddressRange {
+                start: 5007,
+                count: 1,
+                code: 0x02,
+            });
+        assert!(sched.read_group("Heizkreis 1"));
+        assert_eq!(
+            sched.get_value("hk.1.flow_temp").map(|v| v.quality),
+            Some(ValueQuality::Good)
+        );
+        assert_eq!(
+            sched.get_value("hk.1.flow_setpoint").map(|v| v.quality),
+            Some(ValueQuality::Good)
+        );
+        assert_eq!(
+            sched
+                .get_value("hk.1.flow_setpoint_calculated")
+                .map(|v| v.quality),
+            Some(ValueQuality::Error)
+        );
+        assert_eq!(
+            sched
+                .get_value("hk.1.setpoint_offset")
+                .map(|v| v.quality),
+            Some(ValueQuality::Good)
+        );
     }
 
     #[test]

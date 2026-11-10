@@ -362,10 +362,7 @@ impl<T: ModbusTransport, C: Clock> PollScheduler<T, C> {
                     Err(message) => err.push((param_id.clone(), message)),
                 },
                 Err(e)
-                    if matches!(
-                        e,
-                        ModbusError::ConnectionClosed | ModbusError::NotConnected
-                    ) =>
+                    if matches!(e, ModbusError::ConnectionClosed | ModbusError::NotConnected) =>
                 {
                     let message = e.to_string();
                     err.push((param_id.clone(), message.clone()));
@@ -683,15 +680,11 @@ mod tests {
             Some(ValueQuality::Good)
         );
         assert_eq!(
-            sched
-                .get_value("dhw.0.temp_circulation")
-                .map(|v| v.quality),
+            sched.get_value("dhw.0.temp_circulation").map(|v| v.quality),
             Some(ValueQuality::Error)
         );
         assert_eq!(
-            sched
-                .get_value("dhw.0.circulation_pump")
-                .map(|v| v.quality),
+            sched.get_value("dhw.0.circulation_pump").map(|v| v.quality),
             Some(ValueQuality::Error)
         );
         assert_eq!(
@@ -724,9 +717,7 @@ mod tests {
             Some(ValueQuality::Error)
         );
         assert_eq!(
-            sched
-                .get_value("hk.1.setpoint_offset")
-                .map(|v| v.quality),
+            sched.get_value("hk.1.setpoint_offset").map(|v| v.quality),
             Some(ValueQuality::Good)
         );
     }

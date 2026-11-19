@@ -32,7 +32,7 @@ fn run_headless_smoke() {
         .unwrap_or_default()
         .as_nanos();
     let dir = std::env::temp_dir().join(format!("lambda-modbus-gui-smoke-{nanos}"));
-    let mut boot =
+    let boot =
         BootstrappedApp::load_from(&dir, cfg!(feature = "mock")).expect("Temp-Dir Persistenz");
 
     println!(
@@ -47,6 +47,7 @@ fn run_headless_smoke() {
 
     #[cfg(feature = "mock")]
     {
+        let mut boot = boot;
         boot.session.connect(&mut boot.state);
         println!("Nach Verbinden: {}", boot.state.status_label());
         if let Some(poll) = &boot.state.last_poll {

@@ -13,6 +13,8 @@ Cargo workspace at the repo root (**LambdaModbusGui**):
 | `crates/lambda_core` | Commands/events, schedulers, config/active stores |
 | `crates/lambda_mock` | In-memory Modbus slave for mock-first tests |
 | `crates/lambda_app` | GPUI binary (Windows-primary); see crate README for GPUI pin |
+| `crates/agv_qr_core` | AGV QR floor localization core (marker map, pose, sim stubs) |
+| `crates/agv_qr_app` | AGV QR GPUI **test** GUI (simulation; separate from Lambda Modbus) |
 
 ```bash
 cargo check --workspace
@@ -20,6 +22,17 @@ cargo test --workspace
 ./scripts/check.sh
 # optional GUI link (needs native GPUI deps / Windows for real UI):
 cargo check -p lambda_app --features gui
+cargo check -p agv_qr_app --features gui
+```
+
+### AGV QR test GUI (simulation)
+
+Design: [`docs/agv-qr-floor-localization.md`](docs/agv-qr-floor-localization.md).  
+Run notes: [`docs/agv-qr-gpui-test-gui.md`](docs/agv-qr-gpui-test-gui.md).
+
+```bash
+cargo run -p agv_qr_app                  # headless sim smoke
+cargo run -p agv_qr_app --features gui   # GPUI window (Windows-primary)
 ```
 
 Locked defaults: IP `10.0.0.6`, Port `502`, Unit ID `1`, poll **5s**, cyclic writes **60s**, official register map only, German UI, Windows primary, mock-first tests.

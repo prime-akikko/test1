@@ -35,3 +35,7 @@ jobs:
       - name: cargo check lambda_app --features gui
         run: cargo check -p lambda_app --features gui
         continue-on-error: true
+
+      - name: cargo check agv_qr_app --features gui
+        run: cargo check -p agv_qr_app --features gui
+        continue-on-error: true

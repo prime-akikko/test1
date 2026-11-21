@@ -1,0 +1,31 @@
+[package]
+name = "agv_qr_app"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+authors = ["AGV QR localization contributors"]
+description = "GPUI test GUI for AGV QR floor-marker localization (simulation)"
+publish = false
+default-run = "agv_qr_app"
+
+[lib]
+name = "agv_qr_app"
+path = "src/lib.rs"
+
+[[bin]]
+name = "agv_qr_app"
+path = "src/main.rs"
+
+[lints]
+workspace = true
+
+[features]
+default = []
+# Enable GPUI window. Default off so Linux/Cloud `cargo check --workspace`
+# stays green without Wayland/X11/Vulkan; Windows GUI: `--features gui`.
+gui = ["dep:gpui"]
+
+[dependencies]
+agv_qr_core = { workspace = true }
+gpui = { workspace = true, optional = true }

@@ -1,0 +1,18 @@
+[package]
+name = "agv_qr_core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+authors = ["AGV QR localization contributors"]
+description = "AGV QR floor-marker localization core (pose, marker map, sim stubs)"
+publish = false
+
+[lints]
+workspace = true
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[dev-dependencies]

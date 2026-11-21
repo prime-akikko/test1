@@ -5,6 +5,7 @@
 
 #![forbid(unsafe_code)]
 
+pub mod focus;
 pub mod persist;
 pub mod session;
 pub mod state;

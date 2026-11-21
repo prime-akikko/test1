@@ -1,19 +1,23 @@
 //! Root window: connection | groups | parameter list | active | status + confirm dialog.
+//!
+//! Keyboard: Tab / Shift-Tab cycle [`FocusTarget`]s; write-confirm dialog traps focus.
 
+use std::path::PathBuf;
 use std::time::Duration;
 
 use gpui::{
-    div, prelude::*, px, size, App, Application, Bounds, ClickEvent, Context, FocusHandle,
-    FontWeight, InteractiveElement, IntoElement, KeyDownEvent, ParentElement, SharedString, Styled,
-    Timer, TitlebarOptions, Window, WindowBounds, WindowOptions,
+    actions, div, prelude::*, px, size, App, Application, Bounds, ClickEvent, Context, FocusHandle,
+    FontWeight, InteractiveElement, IntoElement, KeyBinding, KeyDownEvent, ParentElement,
+    SharedString, Styled, Timer, TitlebarOptions, Window, WindowBounds, WindowOptions,
 };
 
-use std::path::PathBuf;
-
+use crate::focus::{self, FocusTarget};
 use crate::persist::{self, BootstrappedApp};
 use crate::session::AppSession;
 use crate::state::{PendingConfirm, ShellState};
 use crate::strings;
+
+actions!(lambda_shell, [FocusNext, FocusPrev]);
 
 mod theme {
     use gpui::{rgb, Rgba};
@@ -51,15 +55,10 @@ mod theme {
     pub fn warn() -> Rgba {
         rgb(0xc4_9a3c)
     }
-}
-
-#[derive(Clone, PartialEq, Eq)]
-enum FocusField {
-    Host,
-    Port,
-    Unit,
-    Filter,
-    Draft(String),
+    /// High-contrast keyboard focus ring.
+    pub fn focus_ring() -> Rgba {
+        rgb(0x7e_c8_ff)
+    }
 }
 
 struct RootView {
@@ -67,7 +66,7 @@ struct RootView {
     session: AppSession,
     data_dir: PathBuf,
     focus: FocusHandle,
-    field_focus: Option<FocusField>,
+    ui_focus: Option<FocusTarget>,
 }
 
 impl RootView {
@@ -96,7 +95,7 @@ impl RootView {
             session: boot.session,
             data_dir: boot.data_dir,
             focus,
-            field_focus: None,
+            ui_focus: None,
         }
     }
 
@@ -112,37 +111,61 @@ impl RootView {
         }
     }
 
-    fn on_connect(&mut self, _: &ClickEvent, _: &mut Window, cx: &mut Context<Self>) {
-        self.persist_config();
-        self.session.connect(&mut self.state);
+    fn set_focus(
+        &mut self,
+        target: Option<FocusTarget>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        self.ui_focus = target;
+        self.state.edit_focus = self
+            .ui_focus
+            .as_ref()
+            .and_then(|t| t.draft_param_id().map(str::to_string));
+        window.focus(&self.focus);
         cx.notify();
     }
 
-    fn on_disconnect(&mut self, _: &ClickEvent, _: &mut Window, cx: &mut Context<Self>) {
-        self.session.disconnect(&mut self.state);
-        cx.notify();
+    fn move_focus(&mut self, forward: bool, window: &mut Window, cx: &mut Context<Self>) {
+        let order = focus::focus_order(&self.state);
+        let next = focus::cycle_focus(self.ui_focus.as_ref(), &order, forward);
+        self.set_focus(next, window, cx);
     }
 
-    fn on_refresh(&mut self, _: &ClickEvent, _: &mut Window, cx: &mut Context<Self>) {
-        self.session.refresh(&mut self.state);
-        cx.notify();
+    fn on_focus_next(&mut self, _: &FocusNext, window: &mut Window, cx: &mut Context<Self>) {
+        self.move_focus(true, window, cx);
+    }
+
+    fn on_focus_prev(&mut self, _: &FocusPrev, window: &mut Window, cx: &mut Context<Self>) {
+        self.move_focus(false, window, cx);
     }
 
     fn on_select_group(&mut self, group: String, cx: &mut Context<Self>) {
         self.state.select_group(group);
         self.persist_prefs();
         self.session.refresh_selected_group(&mut self.state);
-        cx.notify();
-    }
-
-    fn on_request_write(&mut self, param_id: String, cx: &mut Context<Self>) {
-        if let Err(msg) = self.state.request_write(&param_id) {
-            self.state.status_message = msg;
+        // Drop stale draft/write focus from the previous group.
+        if matches!(
+            self.ui_focus,
+            Some(FocusTarget::Draft(_)) | Some(FocusTarget::Write(_))
+        ) {
+            self.ui_focus = None;
+            self.state.edit_focus = None;
         }
         cx.notify();
     }
 
-    fn on_confirm_pending(&mut self, _: &ClickEvent, _: &mut Window, cx: &mut Context<Self>) {
+    fn on_request_write(&mut self, param_id: String, window: &mut Window, cx: &mut Context<Self>) {
+        if let Err(msg) = self.state.request_write(&param_id) {
+            self.state.status_message = msg;
+        } else {
+            self.set_focus(Some(FocusTarget::DialogCancel), window, cx);
+            return;
+        }
+        cx.notify();
+    }
+
+    fn on_confirm_pending(&mut self, _: &ClickEvent, window: &mut Window, cx: &mut Context<Self>) {
         let pending = self.state.pending.clone();
         match pending {
             Some(PendingConfirm::WriteSingle {
@@ -168,12 +191,11 @@ impl RootView {
             }
             None => {}
         }
-        cx.notify();
-    }
-
-    fn on_cancel_pending(&mut self, _: &ClickEvent, _: &mut Window, cx: &mut Context<Self>) {
-        self.state.cancel_pending();
-        cx.notify();
+        if self.state.pending.is_none() {
+            self.set_focus(None, window, cx);
+        } else {
+            cx.notify();
+        }
     }
 
     fn on_clear_active(&mut self, key: String, cx: &mut Context<Self>) {
@@ -181,18 +203,13 @@ impl RootView {
         cx.notify();
     }
 
-    fn on_clear_all_active(&mut self, _: &ClickEvent, _: &mut Window, cx: &mut Context<Self>) {
-        self.state.request_clear_all_active();
-        cx.notify();
-    }
-
     fn focused_text_mut(&mut self) -> Option<&mut String> {
-        match &self.field_focus {
-            Some(FocusField::Host) => Some(&mut self.state.connection.host),
-            Some(FocusField::Port) => Some(&mut self.state.connection.port),
-            Some(FocusField::Unit) => Some(&mut self.state.connection.unit_id),
-            Some(FocusField::Filter) => Some(&mut self.state.filter_query),
-            Some(FocusField::Draft(id)) => {
+        match &self.ui_focus {
+            Some(FocusTarget::Host) => Some(&mut self.state.connection.host),
+            Some(FocusTarget::Port) => Some(&mut self.state.connection.port),
+            Some(FocusTarget::Unit) => Some(&mut self.state.connection.unit_id),
+            Some(FocusTarget::Filter) => Some(&mut self.state.filter_query),
+            Some(FocusTarget::Draft(id)) => {
                 let id = id.clone();
                 self.state
                     .parameters
@@ -200,39 +217,96 @@ impl RootView {
                     .find(|r| r.param_id == id)
                     .map(|r| &mut r.draft)
             }
-            None => None,
+            _ => None,
         }
     }
 
-    fn on_key_down(&mut self, event: &KeyDownEvent, _: &mut Window, cx: &mut Context<Self>) {
-        let Some(field) = self.field_focus.clone() else {
+    fn activate_focused(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        let Some(target) = self.ui_focus.clone() else {
             return;
         };
+        let connected = self.state.is_connected();
+        match target {
+            FocusTarget::Host | FocusTarget::Port | FocusTarget::Unit => {
+                self.persist_config();
+                self.session.connect(&mut self.state);
+                cx.notify();
+            }
+            FocusTarget::Connect if !connected => {
+                self.persist_config();
+                self.session.connect(&mut self.state);
+                cx.notify();
+            }
+            FocusTarget::Disconnect if connected => {
+                self.session.disconnect(&mut self.state);
+                cx.notify();
+            }
+            FocusTarget::Refresh if connected => {
+                self.session.refresh(&mut self.state);
+                cx.notify();
+            }
+            FocusTarget::Group(group) => {
+                self.on_select_group(group, cx);
+            }
+            FocusTarget::Draft(id) => {
+                self.on_request_write(id, window, cx);
+            }
+            FocusTarget::Write(id) if connected => {
+                self.on_request_write(id, window, cx);
+            }
+            FocusTarget::ClearAllActive if !self.state.active_entries.is_empty() => {
+                self.state.request_clear_all_active();
+                if self.state.pending.is_some() {
+                    self.set_focus(Some(FocusTarget::DialogCancel), window, cx);
+                } else {
+                    cx.notify();
+                }
+            }
+            FocusTarget::ClearActive(key) => {
+                self.on_clear_active(key, cx);
+            }
+            FocusTarget::DialogCancel => {
+                self.state.cancel_pending();
+                self.set_focus(None, window, cx);
+            }
+            FocusTarget::DialogConfirm => {
+                self.on_confirm_pending(&ClickEvent::default(), window, cx);
+            }
+            _ => {}
+        }
+    }
+
+    fn on_key_down(&mut self, event: &KeyDownEvent, window: &mut Window, cx: &mut Context<Self>) {
         let key = event.keystroke.key.as_str();
+
+        // Tab / Shift-Tab are handled via KeyBinding → FocusNext / FocusPrev actions
+        // (see run_gui). Do not also handle them here or focus would move twice.
+        if key == "tab" {
+            return;
+        }
+
         if key == "escape" {
             if self.state.pending.is_some() {
                 self.state.cancel_pending();
-                cx.notify();
+                self.set_focus(None, window, cx);
             }
             return;
         }
+
         if key == "enter" {
-            match &field {
-                FocusField::Host | FocusField::Port | FocusField::Unit => {
-                    self.session.connect(&mut self.state);
-                }
-                FocusField::Draft(id) => {
-                    let id = id.clone();
-                    let _ = self.on_request_write(id, cx);
-                    return;
-                }
-                FocusField::Filter => {}
-            }
-            cx.notify();
+            self.activate_focused(window, cx);
             return;
         }
+
+        let Some(field) = self.ui_focus.clone() else {
+            return;
+        };
+        if !field.is_text_field() {
+            return;
+        }
+
         if key == "backspace" {
-            let is_filter = matches!(field, FocusField::Filter);
+            let is_filter = matches!(field, FocusTarget::Filter);
             if let Some(t) = self.focused_text_mut() {
                 t.pop();
                 if is_filter {
@@ -247,13 +321,13 @@ impl RootView {
         }
         let ch = key.chars().next().unwrap();
         match &field {
-            FocusField::Host => {
+            FocusTarget::Host => {
                 if ch.is_ascii_graphic() || ch == '.' {
                     self.state.connection.host.push(ch);
                     cx.notify();
                 }
             }
-            FocusField::Port | FocusField::Unit => {
+            FocusTarget::Port | FocusTarget::Unit => {
                 if ch.is_ascii_digit() {
                     if let Some(t) = self.focused_text_mut() {
                         t.push(ch);
@@ -261,14 +335,14 @@ impl RootView {
                     }
                 }
             }
-            FocusField::Filter => {
+            FocusTarget::Filter => {
                 if !ch.is_control() {
                     self.state.filter_query.push(ch);
                     self.persist_prefs();
                     cx.notify();
                 }
             }
-            FocusField::Draft(_) => {
+            FocusTarget::Draft(_) => {
                 if ch.is_ascii_digit() || ch == '.' || ch == '-' {
                     if let Some(t) = self.focused_text_mut() {
                         t.push(ch);
@@ -276,42 +350,12 @@ impl RootView {
                     }
                 }
             }
+            _ => {}
         }
     }
 
-    fn btn(
-        id: impl Into<SharedString>,
-        label: &'static str,
-        enabled: bool,
-        danger: bool,
-        on_click: impl Fn(&mut Self, &ClickEvent, &mut Window, &mut Context<Self>) + 'static,
-        cx: &mut Context<Self>,
-    ) -> impl IntoElement {
-        let id = id.into();
-        let bg = if !enabled {
-            theme::panel_alt()
-        } else if danger {
-            theme::danger()
-        } else {
-            theme::accent()
-        };
-        div()
-            .id(id)
-            .px_3()
-            .py_1()
-            .rounded_sm()
-            .border_1()
-            .border_color(theme::border())
-            .bg(bg)
-            .text_color(theme::text())
-            .text_sm()
-            .when(enabled, |d| {
-                d.cursor_pointer()
-                    .hover(|d| d.bg(theme::accent_dim()))
-                    .on_click(cx.listener(on_click))
-            })
-            .when(!enabled, |d| d.opacity(0.45))
-            .child(label)
+    fn is_focused(&self, target: &FocusTarget) -> bool {
+        self.ui_focus.as_ref() == Some(target)
     }
 
     fn text_field(
@@ -319,11 +363,11 @@ impl RootView {
         id: impl Into<SharedString>,
         label: &'static str,
         value: &str,
-        which: FocusField,
+        which: FocusTarget,
         min_w: f32,
         cx: &mut Context<Self>,
     ) -> impl IntoElement {
-        let active = self.field_focus.as_ref() == Some(&which);
+        let active = self.is_focused(&which);
         let which_click = which.clone();
         div()
             .flex()
@@ -339,10 +383,11 @@ impl RootView {
                     .rounded_sm()
                     .border_1()
                     .border_color(if active {
-                        theme::accent()
+                        theme::focus_ring()
                     } else {
                         theme::border()
                     })
+                    .when(active, |d| d.border_2().border_color(theme::focus_ring()))
                     .bg(theme::field_bg())
                     .text_color(theme::text())
                     .text_sm()
@@ -353,14 +398,7 @@ impl RootView {
                         SharedString::from(value.to_string())
                     })
                     .on_click(cx.listener(move |this, _, window, cx| {
-                        this.field_focus = Some(which_click.clone());
-                        if let FocusField::Draft(ref id) = which_click {
-                            this.state.edit_focus = Some(id.clone());
-                        } else {
-                            this.state.edit_focus = None;
-                        }
-                        window.focus(&this.focus);
-                        cx.notify();
+                        this.set_focus(Some(which_click.clone()), window, cx);
                     })),
             )
     }
@@ -374,6 +412,8 @@ impl RootView {
             .state
             .pending_summary()
             .unwrap_or_else(|| strings::STATUS_NONE.to_string());
+        let cancel_focused = self.is_focused(&FocusTarget::DialogCancel);
+        let confirm_focused = self.is_focused(&FocusTarget::DialogConfirm);
 
         div()
             .absolute()
@@ -382,6 +422,7 @@ impl RootView {
             .items_center()
             .justify_center()
             .bg(gpui::rgba(0x000000_88))
+            .on_mouse_down(gpui::MouseButton::Left, |_, _, _| {})
             .child(
                 div()
                     .w(px(420.))
@@ -406,20 +447,20 @@ impl RootView {
                             .flex_row()
                             .gap_2()
                             .justify_end()
-                            .child(Self::btn(
+                            .child(dialog_btn(
                                 "dlg-cancel",
                                 strings::BTN_CANCEL,
-                                true,
                                 false,
-                                Self::on_cancel_pending,
+                                cancel_focused,
+                                FocusTarget::DialogCancel,
                                 cx,
                             ))
-                            .child(Self::btn(
+                            .child(dialog_btn(
                                 "dlg-ok",
                                 strings::BTN_CONFIRM,
                                 true,
-                                true,
-                                Self::on_confirm_pending,
+                                confirm_focused,
+                                FocusTarget::DialogConfirm,
                                 cx,
                             )),
                     ),
@@ -427,8 +468,97 @@ impl RootView {
     }
 }
 
+fn focusable_btn(
+    id: impl Into<SharedString>,
+    label: &'static str,
+    enabled: bool,
+    danger: bool,
+    focused: bool,
+    target: FocusTarget,
+    on_click: impl Fn(&mut RootView, &ClickEvent, &mut Window, &mut Context<RootView>) + 'static,
+    cx: &mut Context<RootView>,
+) -> impl IntoElement {
+    let id = id.into();
+    let bg = if !enabled {
+        theme::panel_alt()
+    } else if danger {
+        theme::danger()
+    } else {
+        theme::accent()
+    };
+    let target_focus = target.clone();
+    div()
+        .id(id)
+        .px_3()
+        .py_1()
+        .rounded_sm()
+        .border_1()
+        .border_color(if focused {
+            theme::focus_ring()
+        } else {
+            theme::border()
+        })
+        .when(focused, |d| d.border_2().border_color(theme::focus_ring()))
+        .bg(bg)
+        .text_color(theme::text())
+        .text_sm()
+        .on_click(cx.listener(move |this, ev, window, cx| {
+            this.set_focus(Some(target_focus.clone()), window, cx);
+            if enabled {
+                on_click(this, ev, window, cx);
+            }
+        }))
+        .when(enabled, |d| {
+            d.cursor_pointer().hover(|d| d.bg(theme::accent_dim()))
+        })
+        .when(!enabled, |d| d.opacity(0.45))
+        .child(label)
+}
+
+fn dialog_btn(
+    id: impl Into<SharedString>,
+    label: &'static str,
+    danger: bool,
+    focused: bool,
+    target: FocusTarget,
+    cx: &mut Context<RootView>,
+) -> impl IntoElement {
+    let target_click = target.clone();
+    focusable_btn(
+        id,
+        label,
+        true,
+        danger,
+        focused,
+        target,
+        move |this, _, window, cx| match target_click {
+            FocusTarget::DialogCancel => {
+                this.state.cancel_pending();
+                this.set_focus(None, window, cx);
+            }
+            FocusTarget::DialogConfirm => {
+                this.on_confirm_pending(&ClickEvent::default(), window, cx);
+            }
+            _ => {}
+        },
+        cx,
+    )
+}
+
 impl Render for RootView {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        // Keep dialog focus trapped if pending just appeared via non-keyboard path.
+        if self.state.pending.is_some() {
+            let on_dialog = self.ui_focus.as_ref().is_some_and(|t| t.is_dialog());
+            if !on_dialog {
+                self.ui_focus = Some(FocusTarget::DialogCancel);
+                self.state.edit_focus = None;
+                window.focus(&self.focus);
+            }
+        } else if self.ui_focus.as_ref().is_some_and(|t| t.is_dialog()) {
+            self.ui_focus = None;
+        }
+
         let connected = self.state.is_connected();
         let groups = self.state.groups.clone();
         let selected = self.state.selected_group.clone();
@@ -451,9 +581,16 @@ impl Render for RootView {
         let active_empty = active_entries.is_empty();
         let show_dialog = self.state.pending.is_some();
 
+        let host_focus = FocusTarget::Host;
+        let port_focus = FocusTarget::Port;
+        let unit_focus = FocusTarget::Unit;
+        let filter_focus = FocusTarget::Filter;
+
         div()
             .id("root")
             .track_focus(&self.focus)
+            .on_action(cx.listener(Self::on_focus_next))
+            .on_action(cx.listener(Self::on_focus_prev))
             .on_key_down(cx.listener(Self::on_key_down))
             .size_full()
             .flex()
@@ -510,7 +647,7 @@ impl Render for RootView {
                                 "host",
                                 strings::LABEL_HOST,
                                 &host,
-                                FocusField::Host,
+                                host_focus,
                                 140.,
                                 cx,
                             ))
@@ -518,7 +655,7 @@ impl Render for RootView {
                                 "port",
                                 strings::LABEL_PORT,
                                 &port,
-                                FocusField::Port,
+                                port_focus,
                                 70.,
                                 cx,
                             ))
@@ -526,32 +663,48 @@ impl Render for RootView {
                                 "unit",
                                 strings::LABEL_UNIT,
                                 &unit,
-                                FocusField::Unit,
+                                unit_focus,
                                 60.,
                                 cx,
                             ))
-                            .child(Self::btn(
+                            .child(focusable_btn(
                                 "btn-connect",
                                 strings::BTN_CONNECT,
                                 !connected,
                                 false,
-                                Self::on_connect,
+                                self.is_focused(&FocusTarget::Connect),
+                                FocusTarget::Connect,
+                                |this, _, _, cx| {
+                                    this.persist_config();
+                                    this.session.connect(&mut this.state);
+                                    cx.notify();
+                                },
                                 cx,
                             ))
-                            .child(Self::btn(
+                            .child(focusable_btn(
                                 "btn-disconnect",
                                 strings::BTN_DISCONNECT,
                                 connected,
                                 false,
-                                Self::on_disconnect,
+                                self.is_focused(&FocusTarget::Disconnect),
+                                FocusTarget::Disconnect,
+                                |this, _, _, cx| {
+                                    this.session.disconnect(&mut this.state);
+                                    cx.notify();
+                                },
                                 cx,
                             ))
-                            .child(Self::btn(
+                            .child(focusable_btn(
                                 "btn-refresh",
                                 strings::BTN_REFRESH,
                                 connected,
                                 false,
-                                Self::on_refresh,
+                                self.is_focused(&FocusTarget::Refresh),
+                                FocusTarget::Refresh,
+                                |this, _, _, cx| {
+                                    this.session.refresh(&mut this.state);
+                                    cx.notify();
+                                },
                                 cx,
                             )),
                     ),
@@ -582,12 +735,23 @@ impl Render for RootView {
                             .children(groups.into_iter().map(|group| {
                                 let is_sel = group == selected;
                                 let g2 = group.clone();
+                                let target = FocusTarget::Group(group.clone());
+                                let focused = self.is_focused(&target);
                                 div()
                                     .id(SharedString::from(format!("grp-{group}")))
                                     .px_2()
                                     .py_1()
                                     .rounded_sm()
                                     .cursor_pointer()
+                                    .border_1()
+                                    .border_color(if focused {
+                                        theme::focus_ring()
+                                    } else {
+                                        theme::border()
+                                    })
+                                    .when(focused, |d| {
+                                        d.border_2().border_color(theme::focus_ring())
+                                    })
                                     .bg(if is_sel {
                                         theme::accent_dim()
                                     } else {
@@ -596,7 +760,12 @@ impl Render for RootView {
                                     .hover(|d| d.bg(theme::panel_alt()))
                                     .text_sm()
                                     .child(group)
-                                    .on_click(cx.listener(move |this, _, _, cx| {
+                                    .on_click(cx.listener(move |this, _, window, cx| {
+                                        this.set_focus(
+                                            Some(FocusTarget::Group(g2.clone())),
+                                            window,
+                                            cx,
+                                        );
                                         this.on_select_group(g2.clone(), cx);
                                     }))
                             })),
@@ -640,13 +809,12 @@ impl Render for RootView {
                                         "filter",
                                         strings::FILTER_LABEL,
                                         &filter,
-                                        FocusField::Filter,
+                                        filter_focus,
                                         180.,
                                         cx,
                                     )),
                             )
                             .child(
-                                // header
                                 div()
                                     .flex()
                                     .flex_row()
@@ -690,6 +858,9 @@ impl Render for RootView {
                                             }
                                             None => theme::muted(),
                                         };
+                                        let draft_target = FocusTarget::Draft(id.clone());
+                                        let write_target = FocusTarget::Write(id_write.clone());
+                                        let write_focused = self.is_focused(&write_target);
                                         div()
                                             .id(SharedString::from(format!("row-{id}")))
                                             .flex()
@@ -728,17 +899,17 @@ impl Render for RootView {
                                             )
                                             .child(div().w(px(72.)).when(row.writable, |d| {
                                                 let draft = row.draft.clone();
-                                                let focus = FocusField::Draft(id.clone());
                                                 d.child(self.text_field(
                                                     SharedString::from(format!("draft-{id}")),
                                                     "",
                                                     &draft,
-                                                    focus,
+                                                    draft_target,
                                                     64.,
                                                     cx,
                                                 ))
                                             }))
                                             .child(div().w(px(80.)).when(row.writable, |d| {
+                                                let id_write2 = id_write.clone();
                                                 d.child(
                                                     div()
                                                         .id(SharedString::from(format!(
@@ -747,23 +918,40 @@ impl Render for RootView {
                                                         .px_2()
                                                         .py_0p5()
                                                         .rounded_sm()
+                                                        .border_1()
+                                                        .border_color(if write_focused {
+                                                            theme::focus_ring()
+                                                        } else {
+                                                            theme::border()
+                                                        })
+                                                        .when(write_focused, |b| {
+                                                            b.border_2()
+                                                                .border_color(theme::focus_ring())
+                                                        })
                                                         .bg(if connected {
                                                             theme::accent()
                                                         } else {
                                                             theme::panel_alt()
                                                         })
-                                                        .when(connected, |b| {
-                                                            b.cursor_pointer().on_click(
-                                                                cx.listener(
-                                                                    move |this, _, _, cx| {
-                                                                        this.on_request_write(
-                                                                            id_write.clone(),
-                                                                            cx,
-                                                                        );
-                                                                    },
-                                                                ),
-                                                            )
-                                                        })
+                                                        .cursor_pointer()
+                                                        .on_click(cx.listener(
+                                                            move |this, _, window, cx| {
+                                                                this.set_focus(
+                                                                    Some(FocusTarget::Write(
+                                                                        id_write2.clone(),
+                                                                    )),
+                                                                    window,
+                                                                    cx,
+                                                                );
+                                                                if this.state.is_connected() {
+                                                                    this.on_request_write(
+                                                                        id_write2.clone(),
+                                                                        window,
+                                                                        cx,
+                                                                    );
+                                                                }
+                                                            },
+                                                        ))
                                                         .child(strings::BTN_WRITE),
                                                 )
                                             }))
@@ -792,12 +980,25 @@ impl Render for RootView {
                                             .text_color(theme::muted())
                                             .child(strings::ACTIVE_SECTION),
                                     )
-                                    .child(Self::btn(
+                                    .child(focusable_btn(
                                         "btn-clear-all",
                                         strings::BTN_CLEAR_ALL_ACTIVE,
                                         !active_empty,
                                         true,
-                                        Self::on_clear_all_active,
+                                        self.is_focused(&FocusTarget::ClearAllActive),
+                                        FocusTarget::ClearAllActive,
+                                        |this, _, window, cx| {
+                                            this.state.request_clear_all_active();
+                                            if this.state.pending.is_some() {
+                                                this.set_focus(
+                                                    Some(FocusTarget::DialogCancel),
+                                                    window,
+                                                    cx,
+                                                );
+                                            } else {
+                                                cx.notify();
+                                            }
+                                        },
                                         cx,
                                     )),
                             )
@@ -824,6 +1025,8 @@ impl Render for RootView {
                                     .overflow_scroll()
                                     .children(active_entries.into_iter().map(|entry| {
                                         let key = entry.key.clone();
+                                        let target = FocusTarget::ClearActive(key.clone());
+                                        let focused = self.is_focused(&target);
                                         div()
                                             .id(SharedString::from(format!("active-{key}")))
                                             .flex()
@@ -851,9 +1054,28 @@ impl Render for RootView {
                                                     .text_xs()
                                                     .text_color(theme::accent())
                                                     .cursor_pointer()
+                                                    .border_1()
+                                                    .border_color(if focused {
+                                                        theme::focus_ring()
+                                                    } else {
+                                                        theme::border()
+                                                    })
+                                                    .when(focused, |d| {
+                                                        d.border_2()
+                                                            .border_color(theme::focus_ring())
+                                                    })
+                                                    .rounded_sm()
+                                                    .px_1()
                                                     .child(strings::BTN_CLEAR_ACTIVE)
                                                     .on_click(cx.listener(
-                                                        move |this, _, _, cx| {
+                                                        move |this, _, window, cx| {
+                                                            this.set_focus(
+                                                                Some(FocusTarget::ClearActive(
+                                                                    key.clone(),
+                                                                )),
+                                                                window,
+                                                                cx,
+                                                            );
                                                             this.on_clear_active(key.clone(), cx);
                                                         },
                                                     )),
@@ -897,6 +1119,11 @@ impl Render for RootView {
 /// Launch the GPUI application (blocks).
 pub fn run_gui() {
     Application::new().run(|cx: &mut App| {
+        cx.bind_keys([
+            KeyBinding::new("tab", FocusNext, None),
+            KeyBinding::new("shift-tab", FocusPrev, None),
+        ]);
+
         let bounds = Bounds::centered(None, size(px(1280.), px(800.)), cx);
         cx.open_window(
             WindowOptions {
